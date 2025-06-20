@@ -1,0 +1,31 @@
+{
+  "name": "chat-proxy",
+  "version": "1.0.0",
+  "description": "Google Cloud Function for proxying chat requests to OpenRouter API with streaming support",
+  "main": "index.js",
+  "engines": {
+    "node": "18"
+  },
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.1.1",
+    "bottleneck": "^2.19.5",
+    "dotenv": "^16.3.1",
+    "eventsource-parser": "^1.0.0",
+    "node-cache": "^5.1.2",
+    "node-fetch": "^3.3.1",
+    "uuid": "^11.1.0"
+  },
+  "scripts": {
+    "start": "functions-framework --target=chatProxy",
+    "deploy": "gcloud functions deploy chatProxy --runtime nodejs18 --trigger-http --allow-unauthenticated"
+  },
+  "keywords": [
+    "google-cloud-functions",
+    "openrouter",
+    "chat",
+    "streaming",
+    "server-sent-events"
+  ],
+  "author": "",
+  "license": "MIT"
+}
