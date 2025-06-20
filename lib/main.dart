@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:developer' as developer;
 import 'services/hive_service.dart';
+import 'services/openrouter_service.dart';
 import 'theme/app_theme.dart';
 import 'pages/onboarding/intro_page_one.dart';
 import 'pages/onboarding/intro_page_two.dart';
@@ -26,8 +27,16 @@ void main() async {
   try {
     await dotenv.load(fileName: ".env");
     developer.log('✅ .env loaded successfully', name: 'Main');
-    developer.log('API Key present: ${dotenv.env['OPENROUTER_API_KEY']?.isNotEmpty ?? false}', name: 'Main');
+    final apiKey = dotenv.env['OPENROUTER_API_KEY'];
+    developer.log('API Key present: ${apiKey?.isNotEmpty ?? false}', name: 'Main');
+    developer.log('API Key length: ${apiKey?.length ?? 0}', name: 'Main');
+    developer.log('API Key starts with: ${apiKey?.substring(0, 20) ?? 'null'}...', name: 'Main');
     developer.log('Model: ${dotenv.env['DEFAULT_MODEL']}', name: 'Main');
+
+    // Test OpenRouter service configuration
+    final service = OpenRouterService();
+    developer.log('Service configured: ${service.isConfigured}', name: 'Main');
+    developer.log('Model display name: ${service.modelDisplayName}', name: 'Main');
   } catch (e) {
     developer.log('❌ Error loading .env: $e', name: 'Main');
   }

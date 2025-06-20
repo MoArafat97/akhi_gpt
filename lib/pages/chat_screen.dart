@@ -27,10 +27,39 @@ class _ChatScreenState extends State<ChatScreen> {
   String _currentModel = 'Akhi Assistant';
   String? _sessionId;
 
+  // Aggression tracking variables
+  int _violationCount = 0;
+  DateTime? _lockedUntil;
+
   @override
   void initState() {
     super.initState();
     _initializeService();
+    // Load lockout state with error handling
+    _loadLockoutState().catchError((error) {
+      developer.log('Failed to load lockout state in initState: $error', name: 'ChatScreen');
+    });
+    // Test connection on startup
+    _testConnection();
+    // Load chat history if enabled
+    _loadChatHistoryIfEnabled();
+  }
+
+  /// Test OpenRouter connection on startup
+  void _testConnection() async {
+    try {
+      developer.log('Testing OpenRouter connection...', name: 'ChatScreen');
+      final isConnected = await _openRouterService.testConnection();
+      developer.log('Connection test result: $isConnected', name: 'ChatScreen');
+
+      if (!isConnected) {
+        developer.log('❌ OpenRouter connection failed', name: 'ChatScreen');
+      } else {
+        developer.log('✅ OpenRouter connection successful', name: 'ChatScreen');
+      }
+    } catch (e) {
+      developer.log('❌ Connection test error: $e', name: 'ChatScreen');
+    }
   }
 
   @override
@@ -49,6 +78,144 @@ class _ChatScreenState extends State<ChatScreen> {
     developer.log('Service configured: ${_openRouterService.isConfigured}', name: 'ChatScreen');
     if (!_openRouterService.isConfigured) {
       _showConfigurationError();
+    }
+  }
+
+  /// Load lockout state from SharedPreferences
+  Future<void> _loadLockoutState() async {
+    try {
+      final lockedUntilString = await getString('chatLockedUntil', '');
+      final violationCount = await getString('violationCount', '0');
+
+      if (lockedUntilString.isNotEmpty) {
+        _lockedUntil = DateTime.tryParse(lockedUntilString);
+        // Clear lockout if time has passed
+        if (_lockedUntil != null && DateTime.now().isAfter(_lockedUntil!)) {
+          _lockedUntil = null;
+          _violationCount = 0;
+          await setString('chatLockedUntil', '');
+          await setString('violationCount', '0');
+        } else {
+          _violationCount = int.tryParse(violationCount) ?? 0;
+        }
+      }
+
+      setState(() {});
+    } catch (e) {
+      developer.log('Error loading lockout state: $e', name: 'ChatScreen');
+    }
+  }
+
+  /// Check if chat is currently locked
+  bool get _isChatLocked {
+    if (_lockedUntil == null) return false;
+    if (DateTime.now().isAfter(_lockedUntil!)) {
+      // Lockout expired, clear it
+      _clearLockout();
+      return false;
+    }
+    return true;
+  }
+
+  /// Clear lockout state
+  Future<void> _clearLockout() async {
+    try {
+      _lockedUntil = null;
+      _violationCount = 0;
+      await setString('chatLockedUntil', '');
+      await setString('violationCount', '0');
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      developer.log('Error clearing lockout state: $e', name: 'ChatScreen');
+    }
+  }
+
+  /// Apply 10-minute lockout
+  Future<void> _applyLockout() async {
+    try {
+      _lockedUntil = DateTime.now().add(const Duration(minutes: 10));
+      await setString('chatLockedUntil', _lockedUntil!.toIso8601String());
+      await setString('violationCount', _violationCount.toString());
+
+      if (mounted) {
+        setState(() {});
+
+        // Show lockout message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Chat locked for 10 min.',
+              style: GoogleFonts.inter(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } catch (e) {
+      developer.log('Error applying lockout: $e', name: 'ChatScreen');
+    }
+  }
+
+  // Cache compiled regex patterns for better performance
+  static final List<RegExp> _offensivePatterns = [
+    // Profanity and insults (most common, check first)
+    RegExp(r'\b(fuck|shit|damn|bitch|asshole|bastard|cunt|piss)\b', caseSensitive: false),
+    RegExp(r'\b(stupid|idiot|moron|dumb)\b', caseSensitive: false),
+
+    // Aggressive language
+    RegExp(r'\b(hate|kill|die|murder|destroy)\b', caseSensitive: false),
+    RegExp(r'\b(shut up|fuck off|go to hell)\b', caseSensitive: false),
+
+    // Religious disrespect (more specific to avoid false positives)
+    RegExp(r'\b(allah|islam|muslim).*(fake|stupid|wrong|bad)\b', caseSensitive: false),
+    RegExp(r'\breligion.*(bullshit|stupid|fake)\b', caseSensitive: false),
+
+    // Threats and hostility (simplified patterns)
+    RegExp(r'\b(gonna|going to).*(kill|hurt|destroy|beat)\b', caseSensitive: false),
+    RegExp(r'\byou.*(useless|worthless|pathetic)\b', caseSensitive: false),
+  ];
+
+  /// Detect if message contains offensive content (optimized for performance)
+  bool _isOffensiveContent(String message) {
+    // Quick length check - very short messages are unlikely to be offensive
+    if (message.length < 3) return false;
+
+    final lowerMessage = message.toLowerCase();
+
+    // Use pre-compiled regex patterns for better performance
+    for (final pattern in _offensivePatterns) {
+      if (pattern.hasMatch(lowerMessage)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /// Handle violation and return appropriate warning message
+  Future<String?> _handleViolation() async {
+    try {
+      _violationCount++;
+      await setString('violationCount', _violationCount.toString());
+
+      switch (_violationCount) {
+        case 1:
+          return "Let's keep things respectful, bro. 🤝";
+        case 2:
+          return "Bro, I'm here to help, but we have to stay civil.";
+        case 3:
+          return "Final reminder: no offensive language, or I'll pause our chat.";
+        default:
+          // Apply lockout after 3rd violation
+          await _applyLockout();
+          return "Chat paused for 10 minutes due to repeated offensive language. Let's try again later.";
+      }
+    } catch (e) {
+      developer.log('Error handling violation: $e', name: 'ChatScreen');
+      return "Let's keep things respectful, bro. 🤝"; // Fallback to first warning
     }
   }
 
@@ -104,15 +271,65 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _messageController.text.trim();
     if (text.isEmpty || _isLoading) return;
 
+    // Check if chat is locked
+    if (_isChatLocked) {
+      final remainingTime = _lockedUntil!.difference(DateTime.now());
+      final minutes = remainingTime.inMinutes;
+      final seconds = remainingTime.inSeconds % 60;
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Chat locked for ${minutes}m ${seconds}s',
+              style: GoogleFonts.inter(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Check for offensive content
+    if (_isOffensiveContent(text)) {
+      final warningMessage = await _handleViolation();
+
+      if (warningMessage != null) {
+        // Add both user message and warning in single setState for better performance
+        final userMessage = ChatMessage(role: 'user', content: text);
+        final warningChatMessage = ChatMessage(
+          role: 'assistant',
+          content: warningMessage,
+        );
+
+        setState(() {
+          _messages.add(userMessage);
+          _messages.add(warningChatMessage);
+        });
+
+        _messageController.clear();
+        _scrollToBottom();
+
+        // Save chat history if enabled
+        await _saveChatHistoryIfEnabled();
+        return;
+      }
+    }
+
     // Add user message
     final userMessage = ChatMessage(role: 'user', content: text);
     setState(() {
       _messages.add(userMessage);
       _isLoading = true;
     });
-    
+
     _messageController.clear();
     _scrollToBottom();
+
+    // Save immediately after user message
+    await _saveChatHistoryIfEnabled();
 
     try {
       // Create assistant message placeholder
@@ -173,6 +390,9 @@ class _ChatScreenState extends State<ChatScreen> {
           content: 'I\'m having some technical difficulties right now, akhi. Please try again in a moment. 🤲',
         ));
       });
+
+      // Save the fallback message
+      await _saveChatHistoryIfEnabled();
     } finally {
       setState(() {
         _isLoading = false;
@@ -198,9 +418,8 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       // ✨ FEATURE: Background color inherited from card
       backgroundColor: widget.bgColor,
-      body: Container(
-        child: SafeArea(
-          child: Column(
+      body: SafeArea(
+        child: Column(
             children: [
               // ✨ HEADER: Chat title and model info
               Container(
@@ -238,6 +457,12 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                         ],
                       ),
+                    ),
+                    // Clear chat button
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Color(0xFFFCF8F1)),
+                      onPressed: _showClearChatDialog,
+                      tooltip: 'Clear chat',
                     ),
                   ],
                 ),
@@ -323,7 +548,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                           child: TextField(
                             controller: _messageController,
-                            enabled: !_isLoading,
+                            enabled: !_isLoading && !_isChatLocked,
                             style: GoogleFonts.inter(
                               color: const Color(0xFF4F372D),
                               fontSize: 16,
@@ -331,7 +556,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               height: 1.4,
                             ),
                             decoration: InputDecoration(
-                              hintText: 'Type your message...',
+                              hintText: _isChatLocked ? 'Chat is locked...' : 'Type your message...',
                               hintStyle: GoogleFonts.inter(
                                 color: const Color(0xFF4F372D).withValues(alpha: 0.5),
                                 fontSize: 16,
@@ -357,14 +582,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
                       // Send button
                       Material(
-                        color: _isLoading
+                        color: (_isLoading || _isChatLocked)
                             ? const Color(0xFF9C6644).withValues(alpha: 0.6)
                             : const Color(0xFF9C6644),
                         borderRadius: BorderRadius.circular(24),
                         elevation: _isLoading ? 0 : 2,
                         shadowColor: const Color(0xFF9C6644).withValues(alpha: 0.3),
                         child: InkWell(
-                          onTap: !_isLoading ? _sendMessage : null,
+                          onTap: (!_isLoading && !_isChatLocked) ? _sendMessage : null,
                           borderRadius: BorderRadius.circular(24),
                           splashColor: const Color(0xFFFCF8F1).withValues(alpha: 0.3),
                           highlightColor: const Color(0xFFFCF8F1).withValues(alpha: 0.1),
@@ -401,7 +626,6 @@ class _ChatScreenState extends State<ChatScreen> {
             ],
           ),
         ),
-      ),
     );
   }
 
@@ -486,10 +710,37 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  /// Load chat history from persistent storage if enabled
+  Future<void> _loadChatHistoryIfEnabled() async {
+    try {
+      // Check if chat history saving is enabled
+      final savingEnabled = await getBool('saveChatHistory', true);
+      if (!savingEnabled) {
+        return;
+      }
+
+      // Try to load the most recent chat session
+      final recentHistory = await _hiveService.getMostRecentChatHistory();
+      if (recentHistory != null) {
+        setState(() {
+          _messages.clear();
+          _messages.addAll(recentHistory.messages);
+          _sessionId = recentHistory.sessionId;
+        });
+        developer.log('Loaded chat history: $_sessionId with ${_messages.length} messages', name: 'ChatScreen');
+        _scrollToBottom();
+      }
+    } catch (e) {
+      developer.log('Failed to load chat history: $e', name: 'ChatScreen');
+      // Don't show error to user - loading is optional
+    }
+  }
+
+  /// Save chat history immediately after each message if enabled
   Future<void> _saveChatHistoryIfEnabled() async {
     try {
       // Check if chat history saving is enabled
-      final savingEnabled = await getBool('saveChatHistory', false);
+      final savingEnabled = await getBool('saveChatHistory', true);
       if (!savingEnabled || _messages.isEmpty) {
         return;
       }
@@ -518,6 +769,75 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (e) {
       developer.log('Failed to save chat history: $e', name: 'ChatScreen');
       // Don't show error to user - saving is optional
+    }
+  }
+
+  /// Show dialog to confirm clearing chat history
+  void _showClearChatDialog() async {
+    final savingEnabled = await getBool('saveChatHistory', true);
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: widget.bgColor,
+        title: const Text('Clear Chat', style: TextStyle(color: Colors.white)),
+        content: Text(
+          savingEnabled
+              ? 'This chat history is saved and encrypted on your device. Clear it permanently?'
+              : 'Chat history isn\'t saved. Clear the current conversation?',
+          style: const TextStyle(color: Colors.white),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('No', style: TextStyle(color: Colors.white)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _clearChat(savingEnabled);
+            },
+            child: const Text('Yes', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Clear chat messages and optionally delete from storage
+  Future<void> _clearChat(bool savingEnabled) async {
+    try {
+      // Clear in-memory messages
+      setState(() {
+        _messages.clear();
+      });
+
+      // If saving is enabled, also delete from storage
+      if (savingEnabled && _sessionId != null) {
+        final existingHistory = await _hiveService.getChatHistoryBySessionId(_sessionId!);
+        if (existingHistory != null) {
+          await _hiveService.deleteChatHistory(existingHistory.key);
+          developer.log('Deleted chat history from storage: $_sessionId', name: 'ChatScreen');
+        }
+      }
+
+      // Reset session ID to start fresh
+      _sessionId = null;
+
+      developer.log('Chat cleared successfully', name: 'ChatScreen');
+    } catch (e) {
+      developer.log('Failed to clear chat: $e', name: 'ChatScreen');
+      // Show error to user since this is a user-initiated action
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to clear chat: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
