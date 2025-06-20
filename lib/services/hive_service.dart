@@ -6,6 +6,7 @@ import '../models/journal_entry.dart';
 import '../models/mood_entry.dart';
 import '../models/anonymous_letter.dart';
 import '../models/chat_history.dart';
+import 'encryption_service.dart';
 
 /// Singleton service for managing Hive database operations
 /// Provides offline-first local storage for journal entries, mood entries, and anonymous letters
@@ -565,7 +566,9 @@ class HiveService {
     try {
       developer.log('Adding chat history: ${chatHistory.sessionId}', name: 'HiveService');
 
-      final key = await chatBox.add(chatHistory);
+      // Encrypt message contents if encryption is enabled
+      final encryptedHistory = await _encryptChatHistory(chatHistory);
+      final key = await chatBox.add(encryptedHistory);
 
       developer.log('Chat history added with key: $key', name: 'HiveService');
       return key;
@@ -585,7 +588,9 @@ class HiveService {
     try {
       developer.log('Updating chat history key: $key', name: 'HiveService');
 
-      await chatBox.put(key, chatHistory);
+      // Encrypt message contents if encryption is enabled
+      final encryptedHistory = await _encryptChatHistory(chatHistory);
+      await chatBox.put(key, encryptedHistory);
 
       developer.log('Chat history updated successfully', name: 'HiveService');
     } catch (e, stackTrace) {
@@ -606,14 +611,51 @@ class HiveService {
 
       final histories = chatBox.values.toList();
 
-      // Sort by last updated (newest first)
-      histories.sort((a, b) => b.lastUpdated.compareTo(a.lastUpdated));
+      // Decrypt message contents if needed
+      final decryptedHistories = <ChatHistory>[];
+      for (final history in histories) {
+        decryptedHistories.add(await _decryptChatHistory(history));
+      }
 
-      developer.log('Found ${histories.length} chat histories', name: 'HiveService');
-      return histories;
+      // Sort by last updated (newest first)
+      decryptedHistories.sort((a, b) => b.lastUpdated.compareTo(a.lastUpdated));
+
+      developer.log('Found ${decryptedHistories.length} chat histories', name: 'HiveService');
+      return decryptedHistories;
     } catch (e, stackTrace) {
       developer.log(
         'Failed to fetch chat histories: $e',
+        name: 'HiveService',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Get the most recent chat history (for loading on app startup)
+  Future<ChatHistory?> getMostRecentChatHistory() async {
+    try {
+      developer.log('Fetching most recent chat history', name: 'HiveService');
+
+      if (chatBox.isEmpty) {
+        developer.log('No chat histories found', name: 'HiveService');
+        return null;
+      }
+
+      final histories = chatBox.values.toList();
+
+      // Sort by last updated (newest first)
+      histories.sort((a, b) => b.lastUpdated.compareTo(a.lastUpdated));
+
+      final mostRecent = histories.first;
+      developer.log('Found most recent chat history: ${mostRecent.sessionId}', name: 'HiveService');
+
+      // Decrypt message contents if needed
+      return await _decryptChatHistory(mostRecent);
+    } catch (e, stackTrace) {
+      developer.log(
+        'Failed to fetch most recent chat history: $e',
         name: 'HiveService',
         error: e,
         stackTrace: stackTrace,
@@ -633,11 +675,12 @@ class HiveService {
 
       if (history != null) {
         developer.log('Found chat history for session: $sessionId', name: 'HiveService');
+        // Decrypt message contents if needed
+        return await _decryptChatHistory(history);
       } else {
         developer.log('No chat history found for session: $sessionId', name: 'HiveService');
+        return null;
       }
-
-      return history;
     } catch (e, stackTrace) {
       developer.log(
         'Failed to fetch chat history by session ID: $e',
@@ -706,6 +749,72 @@ class HiveService {
         stackTrace: stackTrace,
       );
       rethrow;
+    }
+  }
+
+  // ========== ENCRYPTION HELPER METHODS ==========
+
+  /// Encrypt chat history message contents if encryption is enabled
+  Future<ChatHistory> _encryptChatHistory(ChatHistory chatHistory) async {
+    try {
+      if (!await EncryptionService.isEncryptionEnabled()) {
+        return chatHistory; // Return as-is if encryption disabled
+      }
+
+      // Create a copy with encrypted message contents
+      final encryptedContents = <String>[];
+      for (final content in chatHistory.messageContents) {
+        final encrypted = await EncryptionService.encrypt(content);
+        encryptedContents.add(encrypted);
+      }
+
+      // Create new ChatHistory with encrypted contents
+      final encryptedHistory = ChatHistory.withDates(
+        sessionId: chatHistory.sessionId,
+        customCreatedAt: chatHistory.createdAt,
+        customLastUpdated: chatHistory.lastUpdated,
+        title: chatHistory.title,
+      );
+
+      // Manually set the encrypted message data
+      encryptedHistory.messageRoles = List.from(chatHistory.messageRoles);
+      encryptedHistory.messageContents = encryptedContents;
+      encryptedHistory.messageTimestamps = List.from(chatHistory.messageTimestamps);
+
+      return encryptedHistory;
+    } catch (e) {
+      developer.log('Error encrypting chat history: $e', name: 'HiveService');
+      return chatHistory; // Return original on error
+    }
+  }
+
+  /// Decrypt chat history message contents if they appear to be encrypted
+  Future<ChatHistory> _decryptChatHistory(ChatHistory chatHistory) async {
+    try {
+      // Create a copy with decrypted message contents
+      final decryptedContents = <String>[];
+      for (final content in chatHistory.messageContents) {
+        final decrypted = await EncryptionService.decryptIfNeeded(content);
+        decryptedContents.add(decrypted);
+      }
+
+      // Create new ChatHistory with decrypted contents
+      final decryptedHistory = ChatHistory.withDates(
+        sessionId: chatHistory.sessionId,
+        customCreatedAt: chatHistory.createdAt,
+        customLastUpdated: chatHistory.lastUpdated,
+        title: chatHistory.title,
+      );
+
+      // Manually set the decrypted message data
+      decryptedHistory.messageRoles = List.from(chatHistory.messageRoles);
+      decryptedHistory.messageContents = decryptedContents;
+      decryptedHistory.messageTimestamps = List.from(chatHistory.messageTimestamps);
+
+      return decryptedHistory;
+    } catch (e) {
+      developer.log('Error decrypting chat history: $e', name: 'HiveService');
+      return chatHistory; // Return original on error
     }
   }
 }

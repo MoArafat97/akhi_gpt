@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:developer' as developer;
 import '../utils/settings_util.dart';
 import '../services/hive_service.dart';
 
@@ -43,11 +44,9 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           _SectionHeader('Chat'),
           _SwitchTile('Streaming responses', 'streaming', defaultOn: true),
-          _SwitchTile('Save chat history', 'saveChatHistory', defaultOn: false),
+          _SaveChatHistorySwitchTile(),
+          _SwitchTile('Encrypt saved chats', 'encryptChats', defaultOn: true),
           _ChatHistoryTile(),
-
-          _SectionHeader('Privacy'),
-          _SecureKeyTile('OpenRouter API Key', 'apiKey'),
 
           _SectionHeader('Journal'),
           _SwitchTile('Rich-text editor', 'richText', defaultOn: true),
@@ -278,9 +277,46 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  Widget _SaveChatHistorySwitchTile() {
+    return FutureBuilder<bool>(
+      future: getBool('saveChatHistory', true),
+      builder: (context, snapshot) {
+        final value = snapshot.data ?? true;
+        return SwitchListTile(
+          title: const Text('Save chat history', style: TextStyle(color: Colors.white)),
+          value: value,
+          onChanged: (newValue) async {
+            await setBool('saveChatHistory', newValue);
+
+            // If turning OFF, immediately clear all saved chat history
+            if (!newValue) {
+              try {
+                await _hiveService.deleteAllChatHistories();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Chat history cleared and saving disabled'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+              } catch (e) {
+                developer.log('Failed to clear chat history: $e', name: 'SettingsPage');
+              }
+            }
+
+            setState(() {});
+          },
+          activeColor: Colors.white,
+          inactiveThumbColor: Colors.white54,
+        );
+      },
+    );
+  }
+
   Widget _ChatHistoryTile() {
     return FutureBuilder<bool>(
-      future: getBool('saveChatHistory', false),
+      future: getBool('saveChatHistory', true),
       builder: (context, snapshot) {
         final savingEnabled = snapshot.data ?? false;
 

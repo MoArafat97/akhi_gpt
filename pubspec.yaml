@@ -60,6 +60,9 @@ dependencies:
   package_info_plus: ^8.1.2
   share_plus: ^10.1.2
 
+  # Encryption for secure chat storage
+  crypto: ^3.0.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
