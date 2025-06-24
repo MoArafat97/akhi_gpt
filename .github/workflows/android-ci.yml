@@ -1,0 +1,183 @@
+name: Android CI/CD Pipeline
+
+on:
+  pull_request:
+    branches: [ master, develop ]
+    paths:
+      - 'lib/**'
+      - 'android/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/android-ci.yml'
+
+  push:
+    branches: [ develop ]
+    paths:
+      - 'lib/**'
+      - 'android/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/android-ci.yml'
+
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  FLUTTER_VERSION: '3.24.5'
+  JAVA_VERSION: '17'
+
+jobs:
+  # Job 1: Lint and Test (runs on all PRs)
+  test:
+    name: 🧪 Lint & Test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: 📚 Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+      
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
+          cache-path: '${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:'
+      
+      - name: 📦 Get dependencies
+        run: flutter pub get
+      
+      - name: 🔍 Analyze code
+        run: flutter analyze --fatal-infos
+      
+      - name: 🧪 Run tests
+        run: flutter test --coverage
+      
+      - name: 📊 Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage/lcov.info
+          fail_ci_if_error: false
+
+  # Job 2: Build Staging (runs on push to develop)
+  build_staging:
+    name: 🏗️ Build Staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    environment: staging
+    
+    steps:
+      - name: 📚 Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+      
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
+          cache-path: '${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:'
+      
+      - name: 📦 Get dependencies
+        run: flutter pub get
+      
+      - name: 💎 Setup Ruby for Fastlane
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: android
+      
+      - name: 🏗️ Build staging AAB
+        run: |
+          cd android
+          bundle exec fastlane deploy_staging
+        env:
+          GOOGLE_PLAY_JSON_KEY: ${{ secrets.GOOGLE_PLAY_JSON_KEY }}
+      
+      - name: 📤 Upload staging artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-aab-${{ github.sha }}
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+  # Job 3: Deploy Production (runs on tag push to main)
+  deploy_production:
+    name: 🚀 Deploy Production
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
+    environment: production
+    
+    steps:
+      - name: 📚 Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+      
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
+          cache-path: '${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:'
+      
+      - name: 📦 Get dependencies
+        run: flutter pub get
+      
+      - name: 🔐 Decode Android keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_FILE }}" | base64 -d > android/app/akhi_gpt_keystore.jks
+      
+      - name: 🔐 Decode Google Play JSON key
+        run: |
+          echo "${{ secrets.GOOGLE_PLAY_JSON_KEY }}" | base64 -d > ~/google-play-key.json
+      
+      - name: 💎 Setup Ruby for Fastlane
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: android
+      
+      - name: 🚀 Deploy to Google Play Production
+        run: |
+          cd android
+          bundle exec fastlane deploy_production
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          GOOGLE_PLAY_JSON_KEY_PATH: ~/google-play-key.json
+      
+      - name: 📤 Upload production artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-aab-${{ github.ref_name }}
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 90
+      
+      - name: 🧹 Cleanup sensitive files
+        if: always()
+        run: |
+          rm -f android/app/akhi_gpt_keystore.jks
+          rm -f ~/google-play-key.json

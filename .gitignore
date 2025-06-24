@@ -67,3 +67,10 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets and keys
+DO_NOT_COMMIT__akhi_gpt_keystore_info.txt
+akhi-gpt-874296e18089.json
+keystore.b64
+play-key.b64
+release-key.jks
