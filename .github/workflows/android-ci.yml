@@ -2,14 +2,14 @@ name: Android CI/CD Pipeline
 
 on:
   pull_request:
-    branches: [ main, develop ]
+    branches: [ master, develop ]
     paths:
       - 'lib/**'
       - 'android/**'
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - '.github/workflows/android-ci.yml'
-  
+
   push:
     branches: [ develop ]
     paths:
@@ -18,7 +18,7 @@ on:
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - '.github/workflows/android-ci.yml'
-  
+
   push:
     tags:
       - 'v*.*.*'

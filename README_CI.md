@@ -61,7 +61,7 @@ base64 -w 0 path/to/google-play-key.json         # Linux
 
 ### Pull Request Testing
 
-**Trigger:** Opening or updating a pull request to `main` or `develop`
+**Trigger:** Opening or updating a pull request to `master` or `develop`
 
 **What it does:**
 - ✅ Runs `flutter analyze --fatal-infos`
@@ -88,7 +88,7 @@ git push origin develop
 
 ### Production Deployment
 
-**Trigger:** Pushing a version tag to `main` branch
+**Trigger:** Pushing a version tag to `master` branch
 
 **What it does:**
 - 🔐 Decodes and sets up signing keystore
@@ -102,11 +102,11 @@ git push origin develop
 # 1. Update version in pubspec.yaml
 # version: 1.2.0+3
 
-# 2. Commit and push to main
-git checkout main
+# 2. Commit and push to master
+git checkout master
 git add pubspec.yaml
 git commit -m "chore: bump version to 1.2.0+3"
-git push origin main
+git push origin master
 
 # 3. Create and push version tag
 git tag v1.2.0
