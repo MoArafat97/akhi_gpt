@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class IntroPageSix extends StatefulWidget {
-  const IntroPageSix({super.key});
+class IntroPageSevenB extends StatefulWidget {
+  const IntroPageSevenB({super.key});
 
   @override
-  State<IntroPageSix> createState() => _IntroPageSixState();
+  State<IntroPageSevenB> createState() => _IntroPageSevenBState();
 }
 
-class _IntroPageSixState extends State<IntroPageSix>
+class _IntroPageSevenBState extends State<IntroPageSevenB>
     with TickerProviderStateMixin {
   late final AnimationController _headlineController;
   late final AnimationController _subtitleController;
-  late final AnimationController _countersController;
+  late final AnimationController _chartsController;
   late final AnimationController _progressController;
   
   late final Animation<double> _headlineFadeAnimation;
   late final Animation<Offset> _headlineSlideAnimation;
   late final Animation<double> _subtitleFadeAnimation;
-  late final Animation<double> _counter1Animation;
-  late final Animation<double> _counter2Animation;
-  late final Animation<double> _counter3Animation;
+  late final Animation<double> _chart1Animation;
+  late final Animation<double> _chart2Animation;
+  late final Animation<double> _chart3Animation;
   late final Animation<double> _progressScaleAnimation;
 
   // Button press animation state
@@ -42,9 +42,9 @@ class _IntroPageSixState extends State<IntroPageSix>
       duration: const Duration(milliseconds: 600),
     );
 
-    _countersController = AnimationController(
+    _chartsController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 2000),
     );
 
     _progressController = AnimationController(
@@ -78,29 +78,29 @@ class _IntroPageSixState extends State<IntroPageSix>
       curve: Curves.easeInOut,
     ));
 
-    // Counter animations (33%, 60%, 70%)
-    _counter1Animation = Tween<double>(
+    // Chart animations (44%, 84%, 52%)
+    _chart1Animation = Tween<double>(
       begin: 0.0,
-      end: 33.0,
+      end: 44.0,
     ).animate(CurvedAnimation(
-      parent: _countersController,
+      parent: _chartsController,
       curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
     ));
 
-    _counter2Animation = Tween<double>(
+    _chart2Animation = Tween<double>(
       begin: 0.0,
-      end: 60.0,
+      end: 84.0,
     ).animate(CurvedAnimation(
-      parent: _countersController,
-      curve: const Interval(0.2, 0.7, curve: Curves.easeOut),
+      parent: _chartsController,
+      curve: const Interval(0.3, 0.7, curve: Curves.easeOut),
     ));
 
-    _counter3Animation = Tween<double>(
+    _chart3Animation = Tween<double>(
       begin: 0.0,
-      end: 70.0,
+      end: 52.0,
     ).animate(CurvedAnimation(
-      parent: _countersController,
-      curve: const Interval(0.4, 1.0, curve: Curves.easeOut),
+      parent: _chartsController,
+      curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
     ));
 
     // Progress dot scale animation
@@ -128,14 +128,14 @@ class _IntroPageSixState extends State<IntroPageSix>
     if (mounted) _subtitleController.forward();
     
     await Future.delayed(const Duration(milliseconds: 400));
-    if (mounted) _countersController.forward();
+    if (mounted) _chartsController.forward();
   }
 
   @override
   void dispose() {
     _headlineController.dispose();
     _subtitleController.dispose();
-    _countersController.dispose();
+    _chartsController.dispose();
     _progressController.dispose();
     super.dispose();
   }
@@ -199,7 +199,29 @@ class _IntroPageSixState extends State<IntroPageSix>
           ),
         ),
         const SizedBox(width: 8),
-        // Page 6 dot (active) - with scale animation
+        // Page 6 dot (inactive)
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFFD0C5BA), // Inactive light brown
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Page 7A dot (inactive)
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFFD0C5BA), // Inactive light brown
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Page 7B dot (active) - with scale animation
         AnimatedBuilder(
           animation: _progressScaleAnimation,
           builder: (context, child) {
@@ -217,69 +239,53 @@ class _IntroPageSixState extends State<IntroPageSix>
             );
           },
         ),
-        const SizedBox(width: 8),
-        // Page 7A dot (inactive)
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          width: 8,
-          height: 8,
-          decoration: const BoxDecoration(
-            color: Color(0xFFD0C5BA), // Inactive light brown
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 8),
-        // Page 7B dot (inactive)
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          width: 8,
-          height: 8,
-          decoration: const BoxDecoration(
-            color: Color(0xFFD0C5BA), // Inactive light brown
-            shape: BoxShape.circle,
-          ),
-        ),
       ],
     );
   }
 
-  Widget _buildAnimatedCounters() {
+  Widget _buildAnimatedCharts() {
     return Column(
       children: [
-        // First counter: 33% depression
+        // First chart: 44% of religious hate crimes target Muslims
         AnimatedBuilder(
-          animation: _counter1Animation,
+          animation: _chart1Animation,
           builder: (context, child) {
-            return _buildCounterCard(
-              _counter1Animation.value,
-              'report depression',
-              Icons.sentiment_very_dissatisfied,
+            return _buildCompactStatisticCard(
+              _chart1Animation.value,
+              'of all religious hate crimes (3,400 offenses)',
+              'Muslims account for',
+              Icons.gavel,
+              const Color(0xFF8E44AD), // Purple color for legal statistic
             );
           },
         ),
         const SizedBox(height: 24),
-        
-        // Second counter: 60% discrimination
+
+        // Second chart: 84% experienced direct verbal abuse
         AnimatedBuilder(
-          animation: _counter2Animation,
+          animation: _chart2Animation,
           builder: (context, child) {
-            return _buildCounterCard(
-              _counter2Animation.value,
-              'face discrimination',
-              Icons.heart_broken,
-            );
-          },
-        ),
-        const SizedBox(height: 24),
-        
-        // Third counter: 70% never speak out
-        AnimatedBuilder(
-          animation: _counter3Animation,
-          builder: (context, child) {
-            return _buildCounterCard(
-              _counter3Animation.value,
-              'never speak out',
+            return _buildCompactStatisticCard(
+              _chart2Animation.value,
+              'of British Muslims experienced direct verbal abuse',
+              '',
               Icons.speaker_notes_off,
+              const Color(0xFFE74C3C), // Red color for abuse statistic
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+
+        // Third chart: 52% experienced hostility on the street
+        AnimatedBuilder(
+          animation: _chart3Animation,
+          builder: (context, child) {
+            return _buildCompactStatisticCard(
+              _chart3Animation.value,
+              'experienced hostility on the street',
+              '',
+              Icons.directions_walk,
+              const Color(0xFFE67E22), // Orange color for street hostility
             );
           },
         ),
@@ -287,9 +293,9 @@ class _IntroPageSixState extends State<IntroPageSix>
     );
   }
 
-  Widget _buildCounterCard(double value, String label, IconData icon) {
+  Widget _buildCompactStatisticCard(double value, String label, String prefix, IconData icon, Color accentColor) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
       decoration: BoxDecoration(
         color: const Color(0xFFF5F1EC),
         borderRadius: BorderRadius.circular(16),
@@ -303,41 +309,62 @@ class _IntroPageSixState extends State<IntroPageSix>
       ),
       child: Row(
         children: [
-          // Icon
+          // Icon with accent color background
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF9C6644).withValues(alpha: 0.1),
+              color: accentColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               icon,
-              size: 32,
-              color: const Color(0xFF9C6644),
+              size: 28,
+              color: accentColor,
             ),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 16),
 
-          // Counter and label
+          // Text content
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${value.toInt()}%',
-                  style: GoogleFonts.lexend(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF4F372D),
+                if (prefix.isNotEmpty) ...[
+                  Text(
+                    prefix,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF7A6659),
+                    ),
                   ),
-                ),
-                Text(
-                  label,
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF7A6659),
-                  ),
+                  const SizedBox(height: 4),
+                ],
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '${value.toInt()}%',
+                      style: GoogleFonts.lexend(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: accentColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF4F372D),
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -381,29 +408,30 @@ class _IntroPageSixState extends State<IntroPageSix>
                 ),
               ),
 
-              // ✨ FEATURE: Animated progress indicator dots (8 dots, page 6 active)
+              // ✨ FEATURE: Animated progress indicator dots (8 dots, page 7B active)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: _buildProgressDots(),
               ),
 
-              // Main content
+              // Main content - using SingleChildScrollView for better responsiveness
               Expanded(
-                child: Padding(
+                child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 20),
+
                       // ✨ HEADLINE: Animated fade+slide
                       FadeTransition(
                         opacity: _headlineFadeAnimation,
                         child: SlideTransition(
                           position: _headlineSlideAnimation,
                           child: Text(
-                            'Here\'s more data',
+                            'The Broader Picture',
                             style: GoogleFonts.lexend(
-                              fontSize: 36,
+                              fontSize: 32, // Slightly smaller for better fit
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF4F372D),
                               letterSpacing: 1.2,
@@ -413,76 +441,94 @@ class _IntroPageSixState extends State<IntroPageSix>
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
 
                       // ✨ SUBTITLE: Delayed fade-in
                       FadeTransition(
                         opacity: _subtitleFadeAnimation,
                         child: Text(
-                          'Truths you deserve to know',
+                          'Understanding the full scope of discrimination',
                           style: GoogleFonts.inter(
-                            fontSize: 18,
+                            fontSize: 16, // Slightly smaller for better fit
                             color: const Color(0xFF7A6659),
                           ),
                         ),
                       ),
 
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 32),
 
-                      // ✨ ANIMATED COUNTERS: Three data points with icons
-                      _buildAnimatedCounters(),
+                      // ✨ ANIMATED CHARTS: Three additional statistics
+                      _buildAnimatedCharts(),
+
+                      const SizedBox(height: 80), // Extra space for button
                     ],
                   ),
                 ),
               ),
 
-              // ✨ CONTINUE BUTTON: Card + InkWell + AnimatedScale
-              Padding(
-                padding: const EdgeInsets.only(bottom: 40.0),
-                child: Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              // ✨ CONTINUE BUTTON: Fixed at bottom with safe area
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 24.0),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      const Color(0xFFE8E0D8).withValues(alpha: 0.0),
+                      const Color(0xFFE8E0D8),
+                    ],
                   ),
-                  child: AnimatedScale(
-                    scale: _isPressed ? 0.95 : 1.0,
-                    duration: const Duration(milliseconds: 100),
-                    child: InkWell(
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      splashColor: const Color(0xFFBC5E3A), // Ripple effect color
-                      onTap: () {
-                        // Button press animation and color-shift
-                        setState(() {
-                          _isPressed = true;
-                          _isButtonPressed = true;
-                        });
-                        // Store context before async operation
-                        final navigator = Navigator.of(context);
-                        Future.delayed(const Duration(milliseconds: 100), () {
-                          if (mounted) {
-                            setState(() {
-                              _isPressed = false;
-                              _isButtonPressed = false;
-                            });
-                            // ✨ NAVIGATION: Navigate to first statistics page
-                            navigator.pushNamed('/onboard7a');
-                          }
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 28),
-                        decoration: BoxDecoration(
-                          color: _isButtonPressed
-                              ? const Color(0xFF8E5837) // Darker brown when pressed
-                              : const Color(0xFF9C6644), // Normal earth brown
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          'THEN... WHAT ABOUT THE SISTERS?',
-                          style: GoogleFonts.lexend(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500, // Medium weight
-                            color: const Color(0xFFFCF8F1), // Cream text
+                    ),
+                    child: AnimatedScale(
+                      scale: _isPressed ? 0.95 : 1.0,
+                      duration: const Duration(milliseconds: 100),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        splashColor: const Color(0xFFBC5E3A), // Ripple effect color
+                        onTap: () {
+                          // Button press animation and color-shift
+                          setState(() {
+                            _isPressed = true;
+                            _isButtonPressed = true;
+                          });
+                          // Store context before async operation
+                          final navigator = Navigator.of(context);
+                          Future.delayed(const Duration(milliseconds: 100), () {
+                            if (mounted) {
+                              setState(() {
+                                _isPressed = false;
+                                _isButtonPressed = false;
+                              });
+                              // ✨ NAVIGATION: Navigate to page 7C (safe space page)
+                              navigator.pushNamed('/onboard7c');
+                            }
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 28),
+                          decoration: BoxDecoration(
+                            color: _isButtonPressed
+                                ? const Color(0xFF8E5837) // Darker brown when pressed
+                                : const Color(0xFF9C6644), // Normal earth brown
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'NOW YOU KNOW...',
+                              style: GoogleFonts.lexend(
+                                fontSize: 16, // Slightly smaller
+                                fontWeight: FontWeight.w500, // Medium weight
+                                color: const Color(0xFFFCF8F1), // Cream text
+                              ),
+                            ),
                           ),
                         ),
                       ),

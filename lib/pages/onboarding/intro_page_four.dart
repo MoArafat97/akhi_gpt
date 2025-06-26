@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // ✨ ANIMATION: Character-by-character typewriter animation
-const _fullText = "IT'S TRUE, THERE ARE MANY MUSLIM BROTHERS OUT THERE LIKE YOU...";
+const _fullText = "IT'S TRUE, THERE ARE MANY MUSLIM BROTHERS AND SISTERS OUT THERE LIKE YOU...";
 
 class IntroPageFour extends StatefulWidget {
   const IntroPageFour({super.key});

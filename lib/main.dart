@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:developer' as developer;
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'services/hive_service.dart';
 import 'services/openrouter_service.dart';
 import 'theme/app_theme.dart';
@@ -10,9 +12,13 @@ import 'pages/onboarding/intro_page_three.dart';
 import 'pages/onboarding/intro_page_four.dart';
 import 'pages/onboarding/intro_page_five.dart';
 import 'pages/onboarding/intro_page_six.dart';
-import 'pages/onboarding/intro_page_seven.dart';
-import 'pages/onboarding/intro_page_eight.dart';
+import 'pages/onboarding/intro_page_seven_a.dart';
+import 'pages/onboarding/intro_page_seven_b.dart';
+import 'pages/onboarding/intro_page_seven_c.dart';
+import 'pages/onboarding/intro_page_seven.dart'; // This will become page 8
+import 'pages/onboarding/intro_page_eight.dart'; // This will become page 9
 import 'pages/onboarding/intro_page_nine.dart';
+import 'pages/onboarding/intro_page_ten.dart';
 import 'pages/dashboard.dart';
 import 'pages/card_navigation_page.dart';
 import 'pages/chat_screen.dart';
@@ -20,6 +26,7 @@ import 'pages/chat_page.dart';
 import 'pages/journal_page.dart';
 import 'pages/analytics_page.dart';
 import 'pages/settings_page.dart';
+import 'pages/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,10 +66,19 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Akhi GPT',
-      theme: AppTheme.akhigptTheme,
-      // ✨ NAVIGATION: Set CardNavigationPage as home, direct routing to pages
-      home: const CardNavigationPage(),
+      title: 'Companion GPT',
+      theme: AppTheme.companionTheme,
+      localizationsDelegates: const [
+        // AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', ''), // English
+      ],
+      // ✨ NAVIGATION: Set SplashScreen as home to check gender preference
+      home: const SplashScreen(),
       routes: {
         '/onboard1': (context) => const IntroPageOne(),
         '/onboard2': (context) => const IntroPageTwo(),
@@ -70,9 +86,13 @@ class MyApp extends StatelessWidget {
         '/onboard4': (context) => const IntroPageFour(),
         '/onboard5': (context) => const IntroPageFive(),
         '/onboard6': (context) => const IntroPageSix(),
-        '/onboard7': (context) => const IntroPageSeven(),
-        '/onboard8': (context) => const IntroPageEight(),
-        '/onboard9': (context) => const IntroPageNine(),
+        '/onboard7a': (context) => const IntroPageSevenA(),
+        '/onboard7b': (context) => const IntroPageSevenB(),
+        '/onboard7c': (context) => const IntroPageSevenC(),
+        '/onboard8': (context) => const IntroPageSeven(), // Renamed from page 7
+        '/onboard9': (context) => const IntroPageEight(), // Renamed from page 8
+        '/onboard10': (context) => const IntroPageNine(), // Renamed from page 9
+        '/onboard11': (context) => const IntroPageTen(), // Renamed from page 10
         '/dashboard': (context) => const Dashboard(),
         '/card_navigation': (context) => const CardNavigationPage(),
         '/chat': (context) => const ChatScreen(),

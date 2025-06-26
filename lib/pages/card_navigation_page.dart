@@ -24,12 +24,13 @@ class CardNavigationPage extends StatefulWidget {
 
 class _CardNavigationPageState extends State<CardNavigationPage> {
   // Card data with updated colors
-  final List<_NavCard> _cards = const [
-    _NavCard('Chat to me Akhi', Icons.chat_bubble_outline, Color(0xFF7B4F2F), ChatPage()),
-    _NavCard('Journal', Icons.book_rounded, Color(0xFFA8B97F), JournalPage()),
-    _NavCard('Analytics', Icons.bar_chart_rounded, Color(0xFFC76C5A), AnalyticsPage()),
-    _NavCard('Settings', Icons.settings, Color(0xFFB7AFA3), SettingsPage()),
-    _NavCard('Work in Progress', Icons.construction, Color(0xFF6D88A7), SettingsPage()),
+  final List<_NavCard> _cards = [
+    const _NavCard('Chat to me Habibi', Icons.chat_bubble_outline, Color(0xFF7B4F2F), ChatPage()),
+    const _NavCard('Journal', Icons.book_rounded, Color(0xFFA8B97F), JournalPage()),
+    const _NavCard('Analytics', Icons.bar_chart_rounded, Color(0xFFC76C5A), AnalyticsPage()),
+    const _NavCard('Settings', Icons.settings, Color(0xFFB7AFA3), SettingsPage()),
+    const _NavCard('🧪 Test Onboarding', Icons.play_circle_outline, Color(0xFF8E44AD), SettingsPage()), // Purple for testing
+    const _NavCard('Work in Progress', Icons.construction, Color(0xFF6D88A7), SettingsPage()),
   ];
 
   @override
@@ -69,15 +70,60 @@ class _CardNavigationPageState extends State<CardNavigationPage> {
   Widget _buildHeadingSection() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 16.0),
-      child: Text(
-        'Your Dashboard',
-        style: GoogleFonts.lexend(
-          fontSize: 36,
-          fontWeight: FontWeight.w600,
-          color: const Color(0xFF4F372D), // Onboarding text color
-          letterSpacing: 1.2,
-          height: 1.3,
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Main title
+          Expanded(
+            child: Text(
+              'Your Dashboard',
+              style: GoogleFonts.lexend(
+                fontSize: 36,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF4F372D), // Onboarding text color
+                letterSpacing: 1.2,
+                height: 1.3,
+              ),
+            ),
+          ),
+
+          // ✨ TEST BUTTON: Access onboarding pages for testing
+          Container(
+            margin: const EdgeInsets.only(top: 8.0),
+            child: TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/onboard1');
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: const Color(0xFF9C6644).withValues(alpha: 0.1),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.play_arrow,
+                    size: 16,
+                    color: const Color(0xFF9C6644),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Test Onboarding',
+                    style: GoogleFonts.lexend(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF9C6644),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -150,6 +196,12 @@ class _CardNavigationPageState extends State<CardNavigationPage> {
         color: Colors.transparent,
         child: GestureDetector(
           onTap: () {
+            // Handle special case for test onboarding card
+            if (card.title == '🧪 Test Onboarding') {
+              Navigator.pushNamed(context, '/onboard1');
+              return;
+            }
+
             // Handle special case for work in progress card
             if (card.title == 'Work in Progress') {
               ScaffoldMessenger.of(context).showSnackBar(

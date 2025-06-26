@@ -6,6 +6,8 @@ import '../models/chat_history.dart';
 import '../services/openrouter_service.dart';
 import '../services/hive_service.dart';
 import '../utils/settings_util.dart';
+import '../utils/gender_util.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ChatScreen extends StatefulWidget {
   final Color bgColor;
@@ -26,6 +28,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = false;
   String _currentModel = 'Akhi Assistant';
   String? _sessionId;
+  UserGender _userGender = UserGender.male; // Default, will be loaded from preferences
 
   // Aggression tracking variables
   int _violationCount = 0;
@@ -35,6 +38,8 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _initializeService();
+    // Load user gender preference
+    _loadUserGender();
     // Load lockout state with error handling
     _loadLockoutState().catchError((error) {
       developer.log('Failed to load lockout state in initState: $error', name: 'ChatScreen');
@@ -59,6 +64,22 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     } catch (e) {
       developer.log('❌ Connection test error: $e', name: 'ChatScreen');
+    }
+  }
+
+  /// Load user gender preference
+  void _loadUserGender() async {
+    try {
+      final gender = await GenderUtil.getUserGender();
+      setState(() {
+        _userGender = gender;
+        // Update model display name based on gender
+        _currentModel = gender.companionName + ' Assistant';
+      });
+      developer.log('Loaded user gender: ${gender.displayName}', name: 'ChatScreen');
+    } catch (e) {
+      developer.log('Failed to load user gender: $e', name: 'ChatScreen');
+      // Keep default gender (male) on error
     }
   }
 
@@ -344,7 +365,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       // Get streaming response
       developer.log('Starting chat stream for message: $text', name: 'ChatScreen');
-      final stream = _openRouterService.chatStream(text, _messages.sublist(0, _messages.length - 1));
+      final stream = _openRouterService.chatStream(text, _messages.sublist(0, _messages.length - 1), gender: _userGender);
       final buffer = StringBuffer();
 
       await for (final chunk in stream) {
@@ -387,7 +408,7 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _messages.add(ChatMessage(
           role: 'assistant',
-          content: 'I\'m having some technical difficulties right now, akhi. Please try again in a moment. 🤲',
+          content: 'I\'m having some technical difficulties right now, ${_userGender.casualAddress}. Please try again in a moment. 🤲',
         ));
       });
 
@@ -441,7 +462,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Chat with Akhi',
+                            'Chat with ${_userGender.companionName}',
                             style: GoogleFonts.lexend(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
