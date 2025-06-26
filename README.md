@@ -1,15 +1,18 @@
-# Akhi GPT 🤲
+# Companion GPT 🤲
 
-**Your supportive Muslim brother in your pocket**
+**Your supportive Muslim companion in your pocket**
 
-Akhi GPT is a compassionate mental health chat application designed specifically for the Muslim community. Built with Flutter and powered by an enhanced OpenRouter proxy system, it provides a safe, anonymous, and culturally-aware space for emotional support and spiritual guidance.
+Companion GPT is a compassionate mental health chat application designed specifically for the Muslim community. Built with Flutter and powered by an enhanced OpenRouter proxy system, it provides a safe, anonymous, and culturally-aware space for emotional support and spiritual guidance.
+
+Choose between a supportive **Akhi** (brother) or **Ukhti** (sister) companion based on your preference, ensuring culturally appropriate and comfortable conversations for all users.
 
 ---
 
-## 🌟 **What Makes Akhi Special**
+## 🌟 **What Makes Companion GPT Special**
 
-### **Your Digital Brother**
-Akhi isn't just another chatbot—it's your understanding older brother who:
+### **Your Digital Companion**
+Companion GPT isn't just another chatbot—it's your understanding companion who:
+- **Gender-Aware Support**: Choose between Akhi (brother) or Ukhti (sister) for culturally appropriate conversations
 - Speaks your language (both literally and culturally)
 - Understands Islamic values and perspectives
 - Provides comfort without judgment
@@ -27,6 +30,7 @@ Akhi isn't just another chatbot—it's your understanding older brother who:
 ## 🎯 **Core Features**
 
 ### 💬 **Intelligent Chat System**
+- **Personalized Companion**: Choose your preferred companion type (Akhi/Ukhti) during onboarding
 - **Instant Support**: Start chatting immediately—no setup required
 - **Contextual Conversations**: Remembers your conversation for meaningful dialogue
 - **Emotional Intelligence**: Recognizes distress and responds appropriately
@@ -43,6 +47,12 @@ Akhi isn't just another chatbot—it's your understanding older brother who:
 - **Progress Tracking**: See your mental health journey over time
 - **Islamic Milestones**: Track spiritual practices and their impact on wellbeing
 - **Gentle Reminders**: Encouraging notifications for self-care
+
+### 👥 **Gender-Inclusive Design**
+- **Companion Choice**: Select between Akhi (brother) or Ukhti (sister) during onboarding
+- **Dynamic Personas**: AI adapts language, tone, and cultural references based on your choice
+- **Flexible Settings**: Change your companion type anytime in settings
+- **Culturally Appropriate**: Ensures comfortable conversations for all users
 
 ### ⚙️ **Privacy-First Settings**
 - **Complete Anonymity**: No personal data collection or cloud storage

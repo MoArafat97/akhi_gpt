@@ -6,6 +6,8 @@ import '../models/chat_history.dart';
 import '../services/openrouter_service.dart';
 import '../services/hive_service.dart';
 import '../utils/settings_util.dart';
+import '../utils/gender_util.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ChatScreen extends StatefulWidget {
   final Color bgColor;
@@ -26,6 +28,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = false;
   String _currentModel = 'Akhi Assistant';
   String? _sessionId;
+  UserGender _userGender = UserGender.male; // Default, will be loaded from preferences
 
   // Aggression tracking variables
   int _violationCount = 0;
@@ -35,6 +38,8 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _initializeService();
+    // Load user gender preference
+    _loadUserGender();
     // Load lockout state with error handling
     _loadLockoutState().catchError((error) {
       developer.log('Failed to load lockout state in initState: $error', name: 'ChatScreen');
@@ -59,6 +64,22 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     } catch (e) {
       developer.log('❌ Connection test error: $e', name: 'ChatScreen');
+    }
+  }
+
+  /// Load user gender preference
+  void _loadUserGender() async {
+    try {
+      final gender = await GenderUtil.getUserGender();
+      setState(() {
+        _userGender = gender;
+        // Update model display name based on gender
+        _currentModel = gender.companionName + ' Assistant';
+      });
+      developer.log('Loaded user gender: ${gender.displayName}', name: 'ChatScreen');
+    } catch (e) {
+      developer.log('Failed to load user gender: $e', name: 'ChatScreen');
+      // Keep default gender (male) on error
     }
   }
 
@@ -344,7 +365,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       // Get streaming response
       developer.log('Starting chat stream for message: $text', name: 'ChatScreen');
-      final stream = _openRouterService.chatStream(text, _messages.sublist(0, _messages.length - 1));
+      final stream = _openRouterService.chatStream(text, _messages.sublist(0, _messages.length - 1), gender: _userGender);
       final buffer = StringBuffer();
 
       await for (final chunk in stream) {
@@ -387,7 +408,7 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _messages.add(ChatMessage(
           role: 'assistant',
-          content: 'I\'m having some technical difficulties right now, akhi. Please try again in a moment. 🤲',
+          content: 'I\'m having some technical difficulties right now, ${_userGender.casualAddress}. Please try again in a moment. 🤲',
         ));
       });
 
@@ -441,7 +462,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Chat with Akhi',
+                            'Chat with ${_userGender.companionName}',
                             style: GoogleFonts.lexend(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
@@ -809,25 +830,54 @@ class _ChatScreenState extends State<ChatScreen> {
   /// Clear chat messages and optionally delete from storage
   Future<void> _clearChat(bool savingEnabled) async {
     try {
+      developer.log('=== VERBOSE: _clearChat started ===', name: 'ChatScreen');
+      developer.log('VERBOSE: savingEnabled = $savingEnabled, sessionId = $_sessionId', name: 'ChatScreen');
+      
       // Clear in-memory messages
       setState(() {
         _messages.clear();
       });
+      developer.log('VERBOSE: In-memory messages cleared', name: 'ChatScreen');
 
       // If saving is enabled, also delete from storage
       if (savingEnabled && _sessionId != null) {
+        developer.log('VERBOSE: Attempting to delete from storage for session: $_sessionId', name: 'ChatScreen');
+        
         final existingHistory = await _hiveService.getChatHistoryBySessionId(_sessionId!);
+        developer.log('VERBOSE: getChatHistoryBySessionId returned: ${existingHistory != null ? "found history with key ${existingHistory.key}" : "null"}', name: 'ChatScreen');
+        
         if (existingHistory != null) {
-          await _hiveService.deleteChatHistory(existingHistory.key);
-          developer.log('Deleted chat history from storage: $_sessionId', name: 'ChatScreen');
+          try {
+            developer.log('VERBOSE: Calling deleteChatHistory with key: ${existingHistory.key}', name: 'ChatScreen');
+            final deleteResult = await _hiveService.deleteChatHistory(existingHistory.key);
+            developer.log('VERBOSE: deleteChatHistory returned: $deleteResult', name: 'ChatScreen');
+            
+            if (deleteResult) {
+              developer.log('VERBOSE: Delete successful - chat history removed from storage', name: 'ChatScreen');
+            } else {
+              developer.log('VERBOSE: Delete failed - deleteChatHistory returned false', name: 'ChatScreen');
+            }
+            
+            developer.log('Deleted chat history from storage: $_sessionId', name: 'ChatScreen');
+          } catch (deleteError) {
+            developer.log('VERBOSE: Exception during deleteChatHistory: $deleteError', name: 'ChatScreen');
+            rethrow;
+          }
+        } else {
+          developer.log('VERBOSE: No existing history found to delete', name: 'ChatScreen');
         }
+      } else {
+        developer.log('VERBOSE: Skipping storage deletion - savingEnabled: $savingEnabled, sessionId: $_sessionId', name: 'ChatScreen');
       }
 
       // Reset session ID to start fresh
       _sessionId = null;
+      developer.log('VERBOSE: Session ID reset to null', name: 'ChatScreen');
 
-      developer.log('Chat cleared successfully', name: 'ChatScreen');
+      developer.log('VERBOSE: Chat cleared successfully', name: 'ChatScreen');
+      developer.log('=== VERBOSE: _clearChat completed ===', name: 'ChatScreen');
     } catch (e) {
+      developer.log('VERBOSE: Exception in _clearChat: $e', name: 'ChatScreen');
       developer.log('Failed to clear chat: $e', name: 'ChatScreen');
       // Show error to user since this is a user-initiated action
       if (mounted) {
