@@ -20,7 +20,6 @@ on:
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - '.github/workflows/android-ci.yml'
-
 env:
   FLUTTER_VERSION: '3.24.5'
   JAVA_VERSION: '17'
