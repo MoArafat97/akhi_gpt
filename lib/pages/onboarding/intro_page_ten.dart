@@ -24,15 +24,15 @@ class _IntroPageTenState extends State<IntroPageTen>
   void initState() {
     super.initState();
 
-    // Fade in animation for the page
+    // Fade in animation for the page - optimized for smoother performance
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600),
     );
 
     _fadeAnimation = CurvedAnimation(
       parent: _fadeController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOutCubic, // Smoother curve
     );
 
     // Start fade in animation

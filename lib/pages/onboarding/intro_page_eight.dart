@@ -26,10 +26,13 @@ class _IntroPageEightState extends State<IntroPageEight>
   void initState() {
     super.initState();
 
-    // Character-by-character typewriter effect with variable speed
+    // Optimized character-by-character typewriter effect
+    // Using 60ms per character for smooth, natural typing speed
+    final typingDuration = (_fullText.length * 60).clamp(3000, 6000);
+
     _typewriterController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 12000), // Slower overall duration
+      duration: Duration(milliseconds: typingDuration),
     );
 
     _typewriterAnimation = Tween<double>(
@@ -37,11 +40,15 @@ class _IntroPageEightState extends State<IntroPageEight>
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _typewriterController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOut, // Smoother curve for natural typing feel
     ))..addListener(() {
-      setState(() {
-        _displayedText = _getDisplayedText(_typewriterAnimation.value);
-      });
+      // Optimize: Only update if the text actually changed
+      final newText = _getDisplayedText(_typewriterAnimation.value);
+      if (newText != _displayedText) {
+        setState(() {
+          _displayedText = newText;
+        });
+      }
     });
 
     // Start animation after a delay
@@ -51,8 +58,8 @@ class _IntroPageEightState extends State<IntroPageEight>
       }
     });
 
-    // Fallback timeout to show button if animation takes too long
-    Future.delayed(const Duration(milliseconds: 15000), () {
+    // Fallback timeout to show button after animation completes + buffer
+    Future.delayed(Duration(milliseconds: typingDuration + 1000), () {
       if (mounted && !_showButtonFallback) {
         setState(() {
           _showButtonFallback = true;
@@ -69,38 +76,14 @@ class _IntroPageEightState extends State<IntroPageEight>
 
   bool get _isTypingComplete => _typewriterController.isCompleted;
 
-  // Helper method to get displayed text with variable speed for last few words
+  // Helper method to get displayed text with smooth character progression
   String _getDisplayedText(double progress) {
     if (progress <= 0.0) return "";
     if (progress >= 1.0) return _fullText;
 
-    // Find the position of "and hopefully provide some level of comfort."
-    const lastPart = "and hopefully provide some level of comfort.";
-    final lastPartIndex = _fullText.indexOf(lastPart);
-
-    if (lastPartIndex == -1) {
-      // Fallback to normal speed if we can't find the last part
-      return _fullText.substring(0, (_fullText.length * progress).round());
-    }
-
-    // Split into two parts: before and after the slow part
-    final beforeLastPart = _fullText.substring(0, lastPartIndex);
-
-    // Calculate progress for each part
-    const normalSpeedRatio = 0.7; // 70% of time for first part
-    const slowSpeedRatio = 0.3;   // 30% of time for last part (slower)
-
-    if (progress <= normalSpeedRatio) {
-      // Normal speed for first part
-      final normalProgress = progress / normalSpeedRatio;
-      final charIndex = (beforeLastPart.length * normalProgress).round();
-      return _fullText.substring(0, charIndex);
-    } else {
-      // Slower speed for last part
-      final slowProgress = (progress - normalSpeedRatio) / slowSpeedRatio;
-      final slowCharIndex = (lastPart.length * slowProgress).round();
-      return beforeLastPart + lastPart.substring(0, slowCharIndex);
-    }
+    // Simple, smooth character-by-character progression
+    final charIndex = (_fullText.length * progress).round().clamp(0, _fullText.length);
+    return _fullText.substring(0, charIndex);
   }
 
   Widget _buildProgressDots() {

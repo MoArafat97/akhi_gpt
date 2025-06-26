@@ -43,7 +43,7 @@ class _IntroPageSevenAState extends State<IntroPageSevenA>
 
     _chartsController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 2000), // Longer for smoother counting
     );
 
     _progressController = AnimationController(
@@ -77,13 +77,13 @@ class _IntroPageSevenAState extends State<IntroPageSevenA>
       curve: Curves.easeInOut,
     ));
 
-    // Chart animations (65%, 70%)
+    // Chart animations (65%, 70%) - optimized for smoother performance
     _chart1Animation = Tween<double>(
       begin: 0.0,
       end: 65.0,
     ).animate(CurvedAnimation(
       parent: _chartsController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
     ));
 
     _chart2Animation = Tween<double>(
@@ -91,7 +91,7 @@ class _IntroPageSevenAState extends State<IntroPageSevenA>
       end: 70.0,
     ).animate(CurvedAnimation(
       parent: _chartsController,
-      curve: const Interval(0.4, 1.0, curve: Curves.easeOut),
+      curve: const Interval(0.4, 1.0, curve: Curves.easeOutCubic),
     ));
 
     // Progress dot scale animation

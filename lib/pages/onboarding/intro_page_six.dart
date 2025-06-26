@@ -44,7 +44,7 @@ class _IntroPageSixState extends State<IntroPageSix>
 
     _countersController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1800), // Longer for smoother counting
     );
 
     _progressController = AnimationController(
@@ -78,13 +78,13 @@ class _IntroPageSixState extends State<IntroPageSix>
       curve: Curves.easeInOut,
     ));
 
-    // Counter animations (33%, 60%, 70%)
+    // Counter animations (33%, 60%, 70%) - optimized for smoother performance
     _counter1Animation = Tween<double>(
       begin: 0.0,
       end: 33.0,
     ).animate(CurvedAnimation(
       parent: _countersController,
-      curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
+      curve: const Interval(0.0, 0.4, curve: Curves.easeOutCubic),
     ));
 
     _counter2Animation = Tween<double>(
@@ -92,7 +92,7 @@ class _IntroPageSixState extends State<IntroPageSix>
       end: 60.0,
     ).animate(CurvedAnimation(
       parent: _countersController,
-      curve: const Interval(0.2, 0.7, curve: Curves.easeOut),
+      curve: const Interval(0.2, 0.7, curve: Curves.easeOutCubic),
     ));
 
     _counter3Animation = Tween<double>(
@@ -100,7 +100,7 @@ class _IntroPageSixState extends State<IntroPageSix>
       end: 70.0,
     ).animate(CurvedAnimation(
       parent: _countersController,
-      curve: const Interval(0.4, 1.0, curve: Curves.easeOut),
+      curve: const Interval(0.4, 1.0, curve: Curves.easeOutCubic),
     ));
 
     // Progress dot scale animation

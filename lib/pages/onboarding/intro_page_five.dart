@@ -74,10 +74,10 @@ class _IntroPageFiveState extends State<IntroPageFive>
       curve: const Interval(0.3, 0.8, curve: Curves.easeInOut),
     ));
 
-    // Chart animation controller
+    // Chart animation controller - optimized for smoother performance
     _chartController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500), // Longer for smoother counting
+      duration: const Duration(milliseconds: 2000), // Longer for smoother counting
     );
 
     _muslimCircleAnimation = Tween<double>(
@@ -85,7 +85,7 @@ class _IntroPageFiveState extends State<IntroPageFive>
       end: 0.33, // 33%
     ).animate(CurvedAnimation(
       parent: _chartController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOutCubic, // Smoother curve for better visual flow
     ));
 
     _nonMuslimCircleAnimation = Tween<double>(
@@ -93,7 +93,7 @@ class _IntroPageFiveState extends State<IntroPageFive>
       end: 0.10, // 10%
     ).animate(CurvedAnimation(
       parent: _chartController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOutCubic, // Smoother curve for better visual flow
     ));
 
     _muslimPercentageAnimation = IntTween(
@@ -101,7 +101,7 @@ class _IntroPageFiveState extends State<IntroPageFive>
       end: 33,
     ).animate(CurvedAnimation(
       parent: _chartController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOutCubic, // Smoother curve for better visual flow
     ));
 
     _nonMuslimPercentageAnimation = IntTween(
@@ -109,7 +109,7 @@ class _IntroPageFiveState extends State<IntroPageFive>
       end: 10,
     ).animate(CurvedAnimation(
       parent: _chartController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOutCubic, // Smoother curve for better visual flow
     ));
 
     // Start animations in sequence
@@ -117,13 +117,13 @@ class _IntroPageFiveState extends State<IntroPageFive>
   }
 
   void _startAnimations() async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(const Duration(milliseconds: 200));
     if (mounted) _headlineController.forward();
-    
-    await Future.delayed(const Duration(milliseconds: 600));
+
+    await Future.delayed(const Duration(milliseconds: 400));
     if (mounted) _researchController.forward();
-    
-    await Future.delayed(const Duration(milliseconds: 800));
+
+    await Future.delayed(const Duration(milliseconds: 500));
     if (mounted) _chartController.forward();
   }
 
