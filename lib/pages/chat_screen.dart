@@ -830,25 +830,54 @@ class _ChatScreenState extends State<ChatScreen> {
   /// Clear chat messages and optionally delete from storage
   Future<void> _clearChat(bool savingEnabled) async {
     try {
+      developer.log('=== VERBOSE: _clearChat started ===', name: 'ChatScreen');
+      developer.log('VERBOSE: savingEnabled = $savingEnabled, sessionId = $_sessionId', name: 'ChatScreen');
+      
       // Clear in-memory messages
       setState(() {
         _messages.clear();
       });
+      developer.log('VERBOSE: In-memory messages cleared', name: 'ChatScreen');
 
       // If saving is enabled, also delete from storage
       if (savingEnabled && _sessionId != null) {
+        developer.log('VERBOSE: Attempting to delete from storage for session: $_sessionId', name: 'ChatScreen');
+        
         final existingHistory = await _hiveService.getChatHistoryBySessionId(_sessionId!);
+        developer.log('VERBOSE: getChatHistoryBySessionId returned: ${existingHistory != null ? "found history with key ${existingHistory.key}" : "null"}', name: 'ChatScreen');
+        
         if (existingHistory != null) {
-          await _hiveService.deleteChatHistory(existingHistory.key);
-          developer.log('Deleted chat history from storage: $_sessionId', name: 'ChatScreen');
+          try {
+            developer.log('VERBOSE: Calling deleteChatHistory with key: ${existingHistory.key}', name: 'ChatScreen');
+            final deleteResult = await _hiveService.deleteChatHistory(existingHistory.key);
+            developer.log('VERBOSE: deleteChatHistory returned: $deleteResult', name: 'ChatScreen');
+            
+            if (deleteResult) {
+              developer.log('VERBOSE: Delete successful - chat history removed from storage', name: 'ChatScreen');
+            } else {
+              developer.log('VERBOSE: Delete failed - deleteChatHistory returned false', name: 'ChatScreen');
+            }
+            
+            developer.log('Deleted chat history from storage: $_sessionId', name: 'ChatScreen');
+          } catch (deleteError) {
+            developer.log('VERBOSE: Exception during deleteChatHistory: $deleteError', name: 'ChatScreen');
+            rethrow;
+          }
+        } else {
+          developer.log('VERBOSE: No existing history found to delete', name: 'ChatScreen');
         }
+      } else {
+        developer.log('VERBOSE: Skipping storage deletion - savingEnabled: $savingEnabled, sessionId: $_sessionId', name: 'ChatScreen');
       }
 
       // Reset session ID to start fresh
       _sessionId = null;
+      developer.log('VERBOSE: Session ID reset to null', name: 'ChatScreen');
 
-      developer.log('Chat cleared successfully', name: 'ChatScreen');
+      developer.log('VERBOSE: Chat cleared successfully', name: 'ChatScreen');
+      developer.log('=== VERBOSE: _clearChat completed ===', name: 'ChatScreen');
     } catch (e) {
+      developer.log('VERBOSE: Exception in _clearChat: $e', name: 'ChatScreen');
       developer.log('Failed to clear chat: $e', name: 'ChatScreen');
       // Show error to user since this is a user-initiated action
       if (mounted) {

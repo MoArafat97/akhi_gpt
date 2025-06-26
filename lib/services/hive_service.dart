@@ -664,7 +664,7 @@ class HiveService {
     }
   }
 
-  /// Get chat history by session ID
+  /// Get chat history by session ID (returns original object with key for deletion)
   Future<ChatHistory?> getChatHistoryBySessionId(String sessionId) async {
     try {
       developer.log('Fetching chat history for session: $sessionId', name: 'HiveService');
@@ -674,9 +674,10 @@ class HiveService {
           .firstOrNull;
 
       if (history != null) {
-        developer.log('Found chat history for session: $sessionId', name: 'HiveService');
-        // Decrypt message contents if needed
-        return await _decryptChatHistory(history);
+        developer.log('Found chat history for session: $sessionId with key: ${history.key}', name: 'HiveService');
+        // Return the original object to preserve the key for deletion operations
+        // Note: Content may be encrypted, use getChatHistoryBySessionIdDecrypted for display
+        return history;
       } else {
         developer.log('No chat history found for session: $sessionId', name: 'HiveService');
         return null;
@@ -692,26 +693,61 @@ class HiveService {
     }
   }
 
+  /// Get chat history by session ID with decrypted content (for display purposes)
+  Future<ChatHistory?> getChatHistoryBySessionIdDecrypted(String sessionId) async {
+    try {
+      final history = await getChatHistoryBySessionId(sessionId);
+      if (history != null) {
+        return await _decryptChatHistory(history);
+      }
+      return null;
+    } catch (e, stackTrace) {
+      developer.log(
+        'Failed to fetch decrypted chat history by session ID: $e',
+        name: 'HiveService',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
   /// Delete chat history
   Future<bool> deleteChatHistory(dynamic key) async {
     try {
-      developer.log('Deleting chat history key: $key', name: 'HiveService');
+      developer.log('=== VERBOSE: deleteChatHistory started ===', name: 'HiveService');
+      developer.log('VERBOSE: Attempting to delete chat history with key: $key (type: ${key.runtimeType})', name: 'HiveService');
+      developer.log('VERBOSE: chatBox is open: ${chatBox.isOpen}', name: 'HiveService');
+      developer.log('VERBOSE: chatBox length before deletion: ${chatBox.length}', name: 'HiveService');
+      developer.log('VERBOSE: chatBox keys: ${chatBox.keys.toList()}', name: 'HiveService');
+      
+      final containsKey = chatBox.containsKey(key);
+      developer.log('VERBOSE: chatBox.containsKey($key): $containsKey', name: 'HiveService');
 
-      if (chatBox.containsKey(key)) {
+      if (containsKey) {
+        developer.log('VERBOSE: Key found, proceeding with deletion...', name: 'HiveService');
         await chatBox.delete(key);
+        developer.log('VERBOSE: chatBox.delete() completed', name: 'HiveService');
+        developer.log('VERBOSE: chatBox length after deletion: ${chatBox.length}', name: 'HiveService');
+        developer.log('VERBOSE: chatBox keys after deletion: ${chatBox.keys.toList()}', name: 'HiveService');
         developer.log('Chat history deleted successfully', name: 'HiveService');
+        developer.log('=== VERBOSE: deleteChatHistory completed successfully ===', name: 'HiveService');
         return true;
       } else {
+        developer.log('VERBOSE: Key not found in chatBox', name: 'HiveService');
         developer.log('Chat history not found for deletion', name: 'HiveService');
+        developer.log('=== VERBOSE: deleteChatHistory completed (key not found) ===', name: 'HiveService');
         return false;
       }
     } catch (e, stackTrace) {
+      developer.log('VERBOSE: Exception in deleteChatHistory: $e', name: 'HiveService');
       developer.log(
         'Failed to delete chat history: $e',
         name: 'HiveService',
         error: e,
         stackTrace: stackTrace,
       );
+      developer.log('=== VERBOSE: deleteChatHistory failed with exception ===', name: 'HiveService');
       rethrow;
     }
   }
@@ -791,11 +827,21 @@ class HiveService {
   /// Decrypt chat history message contents if they appear to be encrypted
   Future<ChatHistory> _decryptChatHistory(ChatHistory chatHistory) async {
     try {
-      // Create a copy with decrypted message contents
+      // Check if decryption is needed
+      bool needsDecryption = false;
       final decryptedContents = <String>[];
+
       for (final content in chatHistory.messageContents) {
         final decrypted = await EncryptionService.decryptIfNeeded(content);
         decryptedContents.add(decrypted);
+        if (decrypted != content) {
+          needsDecryption = true;
+        }
+      }
+
+      // If no decryption was needed, return the original to preserve the key
+      if (!needsDecryption) {
+        return chatHistory;
       }
 
       // Create new ChatHistory with decrypted contents
