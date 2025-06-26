@@ -1,0 +1,71 @@
+{
+  "@@locale": "en",
+  "appTitle": "Companion GPT",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "greetingBrother": "Assalamu alaikum, brother!",
+  "@greetingBrother": {
+    "description": "Greeting for male users"
+  },
+  "greetingSister": "Assalamu alaikum, sister!",
+  "@greetingSister": {
+    "description": "Greeting for female users"
+  },
+  "chatWithBrother": "Chat with Akhi",
+  "@chatWithBrother": {
+    "description": "Chat header for male users"
+  },
+  "chatWithSister": "Chat with Ukhti",
+  "@chatWithSister": {
+    "description": "Chat header for female users"
+  },
+  "supportiveBrother": "supportive Muslim brother",
+  "@supportiveBrother": {
+    "description": "Description for male persona"
+  },
+  "supportiveSister": "supportive Muslim sister",
+  "@supportiveSister": {
+    "description": "Description for female persona"
+  },
+  "bigBrother": "big brother",
+  "@bigBrother": {
+    "description": "Big brother reference for male users"
+  },
+  "bigSister": "big sister",
+  "@bigSister": {
+    "description": "Big sister reference for female users"
+  },
+  "brotherFallback": "I'm having some technical difficulties right now, akhi. Please try again in a moment. 🤲",
+  "@brotherFallback": {
+    "description": "Fallback message for male users"
+  },
+  "sisterFallback": "I'm having some technical difficulties right now, ukhti. Please try again in a moment. 🤲",
+  "@sisterFallback": {
+    "description": "Fallback message for female users"
+  },
+  "genderSelectTitle": "Choose Your Companion",
+  "@genderSelectTitle": {
+    "description": "Title for gender selection page"
+  },
+  "genderSelectSubtitle": "Who would you like to chat with?",
+  "@genderSelectSubtitle": {
+    "description": "Subtitle for gender selection page"
+  },
+  "selectBrother": "Brother",
+  "@selectBrother": {
+    "description": "Button text to select male companion"
+  },
+  "selectSister": "Sister",
+  "@selectSister": {
+    "description": "Button text to select female companion"
+  },
+  "brotherDescription": "A supportive older brother who understands your journey",
+  "@brotherDescription": {
+    "description": "Description for male companion option"
+  },
+  "sisterDescription": "A caring older sister who shares your experiences",
+  "@sisterDescription": {
+    "description": "Description for female companion option"
+  }
+}

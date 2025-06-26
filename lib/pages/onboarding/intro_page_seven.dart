@@ -142,7 +142,40 @@ class _IntroPageSevenState extends State<IntroPageSeven>
           ),
         ),
         const SizedBox(width: 8),
-        // Page 7 dot (active)
+        // Page 7A dot (inactive)
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFFD0C5BA), // Inactive light brown
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Page 7B dot (inactive)
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFFD0C5BA), // Inactive light brown
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Page 7C dot (inactive)
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFFD0C5BA), // Inactive light brown
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Page 8 dot (active) - this is the current page
         AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           width: 12,
@@ -200,7 +233,7 @@ class _IntroPageSevenState extends State<IntroPageSeven>
                   ),
                 ),
 
-                // ✨ FEATURE: Animated progress indicator dots (7 dots, page 7 active)
+                // ✨ FEATURE: Animated progress indicator dots (10 dots, page 8 active)
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: _buildProgressDots(),
@@ -268,8 +301,8 @@ class _IntroPageSevenState extends State<IntroPageSeven>
                                       _isPressed = false;
                                       _isButtonPressed = false;
                                     });
-                                    // ✨ NAVIGATION: Navigate to next page
-                                    navigator.pushNamed('/onboard8');
+                                    // ✨ NAVIGATION: Navigate to next page (now page 9)
+                                    navigator.pushNamed('/onboard9');
                                   }
                                 });
                               },

@@ -5,7 +5,7 @@ class AppTheme {
   static const Color backgroundColor = Color(0xFF0F1740);
   static const Color textColor = Colors.white;
 
-  static ThemeData get akhigptTheme {
+  static ThemeData get companionTheme {
     return ThemeData(
       scaffoldBackgroundColor: backgroundColor,
       primarySwatch: Colors.blue,
@@ -90,5 +90,6 @@ class AppTheme {
   }
 
   // Keep backward compatibility
-  static ThemeData get theme => akhigptTheme;
+  static ThemeData get theme => companionTheme;
+  static ThemeData get akhigptTheme => companionTheme; // Legacy support
 }

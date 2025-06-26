@@ -173,6 +173,28 @@ class _IntroPageEightState extends State<IntroPageEight>
           ),
         ),
         const SizedBox(width: 8),
+        // Page 7A dot (inactive)
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFFD0C5BA), // Inactive light brown
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Page 7B dot (inactive)
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFFD0C5BA), // Inactive light brown
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
         // Page 7 dot (inactive)
         AnimatedContainer(
           duration: const Duration(milliseconds: 300),
@@ -184,7 +206,29 @@ class _IntroPageEightState extends State<IntroPageEight>
           ),
         ),
         const SizedBox(width: 8),
-        // Page 8 dot (active)
+        // Page 7C dot (inactive)
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFFD0C5BA), // Inactive light brown
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Page 8 dot (inactive)
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFFD0C5BA), // Inactive light brown
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Page 9 dot (active) - this is the current page
         AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           width: 12,
@@ -242,7 +286,7 @@ class _IntroPageEightState extends State<IntroPageEight>
                   ),
                 ),
 
-                // ✨ FEATURE: Animated progress indicator dots (8 dots, page 8 active)
+                // ✨ FEATURE: Animated progress indicator dots (11 dots, page 9 active)
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: _buildProgressDots(),
@@ -310,8 +354,8 @@ class _IntroPageEightState extends State<IntroPageEight>
                                       _isPressed = false;
                                       _isButtonPressed = false;
                                     });
-                                    // ✨ NAVIGATION: Navigate to next page
-                                    navigator.pushNamed('/onboard9');
+                                    // ✨ NAVIGATION: Navigate to next page (now page 10)
+                                    navigator.pushNamed('/onboard10');
                                   }
                                 });
                               },

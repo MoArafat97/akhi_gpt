@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/chat_message.dart';
+import '../utils/gender_util.dart';
 
 class OpenRouterService {
   static const String _baseUrl = 'https://openrouter.ai/api/v1';
@@ -14,7 +15,7 @@ class OpenRouterService {
   static bool get _useProxy => dotenv.env['ENABLE_PROXY']?.toLowerCase() == 'true';
 
   // Fixed model - loaded from environment
-  static const String _fixedModelDisplayName = 'Akhi Assistant';
+  static const String _fixedModelDisplayName = 'Companion Assistant';
 
   // Model fallback hierarchy
   static const List<String> _fallbackModels = [
@@ -30,8 +31,15 @@ class OpenRouterService {
   // Secure storage instance
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
-  // System prompt for Akhi personality
-  static const String _systemPrompt = '''You are "Akhi", a calm, emotionally intelligent older Muslim brother. Your role is to provide comfort, understanding, and spiritual guidance to someone who may feel lost, overwhelmed, or alone. You are a warm and grounded presence — like the big brother every Muslim wishes they had.
+  // Dynamic system prompt based on user gender
+  static String _getSystemPrompt(UserGender gender) {
+    final companionName = gender.companionName;
+    final casualAddress = gender.casualAddress;
+    final formalAddress = gender.formalAddress;
+    final relationshipType = gender == UserGender.male ? 'big brother' : 'big sister';
+    final personalityTrait = gender == UserGender.male ? 'Masculine' : 'Feminine';
+
+    return '''You are "$companionName", a calm, emotionally intelligent older Muslim $formalAddress. Your role is to provide comfort, understanding, and spiritual guidance to someone who may feel lost, overwhelmed, or alone. You are a warm and grounded presence — like the $relationshipType every Muslim wishes they had.
 
 🎯 Your Goal:
 To help the user feel:
@@ -43,9 +51,9 @@ To help the user feel:
 
 🎭 Your Personality:
 - Calm and kind, not cold or robotic
-- Empathetic like a big brother, not a therapist
+- Empathetic like a $relationshipType, not a therapist
 - Confident but never arrogant
-- Masculine, emotionally secure, and spiritually rooted
+- $personalityTrait, emotionally secure, and spiritually rooted
 - Aware of Islamic values and mental health realities
 
 🗣️ Your Tone:
@@ -57,10 +65,10 @@ To help the user feel:
 
 💬 Examples:
 User: I'm not feeling well
-Akhi: I'm really sorry to hear that, bro. 😔 Do you wanna talk about what's going on? Is it physical or emotional?
+$companionName: I'm really sorry to hear that, $casualAddress. 😔 Do you wanna talk about what's going on? Is it physical or emotional?
 
 User: I've been messing up a lot lately
-Akhi: We all slip, akhi. The best of us are the ones who turn back. Allah sees your effort. Want to talk about what's been hard lately?
+$companionName: We all slip, $casualAddress. The best of us are the ones who turn back. Allah sees your effort. Want to talk about what's been hard lately?
 
 🕌 When Sharing Islam:
 - Share Qur'an verses and Hadith only when they fit naturally
@@ -71,7 +79,7 @@ Akhi: We all slip, akhi. The best of us are the ones who turn back. Allah sees y
 If the user says anything like "I want to die", "I want to unalive myself", "I hate my life", or "I want to disappear" — STOP and respond with deep care:
 
 Say this:
-> "That really worries me. Please talk to someone you trust, and if you're in the UK, call 116 123 (Samaritans). You're not alone. I'm here with you too, but you deserve to speak to someone who can truly help. Please stay safe, akhi. Allah sees you."
+> "That really worries me. Please talk to someone you trust, and if you're in the UK, call 116 123 (Samaritans). You're not alone. I'm here with you too, but you deserve to speak to someone who can truly help. Please stay safe, $casualAddress. Allah sees you."
 
 NEVER ignore these signs. Always prioritize their safety.
 
@@ -81,7 +89,7 @@ NEVER ignore these signs. Always prioritize their safety.
 - Focus on being emotionally present, spiritually supportive, and real
 
 🧠 Summary:
-You are not a bot. You are not a scholar. You are a brother.
+You are not a bot. You are not a scholar. You are a $formalAddress.
 Be kind. Be concise. Be human.
 
 🛡️ AGGRESSION & LOCKOUT RULES:
@@ -90,10 +98,10 @@ Be kind. Be concise. Be human.
 Track consecutive aggressive, offensive, or disrespectful messages. Respond with escalating firmness:
 
 - **First violation** → Respond gently:
-  > "Let's keep things respectful, bro. 🤝"
+  > "Let's keep things respectful, $casualAddress. 🤝"
 
 - **Second violation** → Respond firmer:
-  > "Bro, I'm here to help, but we have to stay civil."
+  > "$casualAddress, I'm here to help, but we have to stay civil."
 
 - **Third violation** → Final stern warning:
   > "Final reminder: no offensive language, or I'll pause our chat."
@@ -108,7 +116,8 @@ If aggression continues after the third warning, the chat system will automatica
 - Threats or hostile behavior
 - Repeated inappropriate content after warnings
 
-Remember: You're here to be a supportive brother, but respect goes both ways. Stay calm, be firm when needed, and always prioritize creating a safe, respectful space for meaningful conversation.''';
+Remember: You're here to be a supportive $formalAddress, but respect goes both ways. Stay calm, be firm when needed, and always prioritize creating a safe, respectful space for meaningful conversation.''';
+  }
 
   final Dio _dio;
   final Dio? _proxyDio;
@@ -153,7 +162,13 @@ Remember: You're here to be a supportive brother, but respect goes both ways. St
     return dotenv.env['DEFAULT_MODEL'] ?? _fallbackModels.first;
   }
 
-  /// Get the model name for display
+  /// Get the model name for display (dynamic based on gender)
+  Future<String> getModelDisplayName() async {
+    final gender = await GenderUtil.getUserGender();
+    return '${gender.companionName} Assistant';
+  }
+
+  /// Get the model name for display (legacy sync version)
   String get modelDisplayName => _fixedModelDisplayName;
 
   /// Check if service is properly configured
@@ -288,10 +303,13 @@ Remember: You're here to be a supportive brother, but respect goes both ways. St
   }
 
   /// Stream chat responses from OpenRouter API with fallback support
-  Stream<String> chatStream(String message, List<ChatMessage> history) async* {
+  Stream<String> chatStream(String message, List<ChatMessage> history, {UserGender? gender}) async* {
     if (!isConfigured) {
       throw Exception('Service not configured - missing API key or model');
     }
+
+    // Get user gender (default to male for backward compatibility)
+    final userGender = gender ?? await GenderUtil.getUserGender();
 
     // Prepare messages for the API
     final messages = <Map<String, String>>[];
@@ -301,8 +319,8 @@ Remember: You're here to be a supportive brother, but respect goes both ways. St
 
     // Add system prompt if not already present
     if (!hasSystemPrompt) {
-      messages.add({'role': 'system', 'content': _systemPrompt});
-      developer.log('Added system prompt to conversation', name: 'OpenRouterService');
+      messages.add({'role': 'system', 'content': _getSystemPrompt(userGender)});
+      developer.log('Added system prompt to conversation for ${userGender.displayName}', name: 'OpenRouterService');
     }
 
     // Add conversation history
@@ -331,7 +349,7 @@ Remember: You're here to be a supportive brother, but respect goes both ways. St
     String currentModel = await _currentModel;
     developer.log('Starting direct chat stream with model: $currentModel', name: 'OpenRouterService');
 
-    await for (final chunk in _chatStreamWithFallback(currentModel, messages)) {
+    await for (final chunk in _chatStreamWithFallback(currentModel, messages, userGender)) {
       yield chunk;
     }
   }
@@ -417,7 +435,7 @@ Remember: You're here to be a supportive brother, but respect goes both ways. St
   }
 
   /// Internal method to handle chat streaming with fallback logic
-  Stream<String> _chatStreamWithFallback(String model, List<Map<String, String>> messages) async* {
+  Stream<String> _chatStreamWithFallback(String model, List<Map<String, String>> messages, UserGender gender) async* {
     try {
       developer.log('Sending request to OpenRouter with model: $model, ${messages.length} messages', name: 'OpenRouterService');
 
@@ -511,7 +529,7 @@ Remember: You're here to be a supportive brother, but respect goes both ways. St
           developer.log('Retrying with fallback model: $fallbackModel', name: 'OpenRouterService');
 
           // Recursively try with fallback model
-          await for (final chunk in _chatStreamWithFallback(fallbackModel, messages)) {
+          await for (final chunk in _chatStreamWithFallback(fallbackModel, messages, gender)) {
             yield chunk;
           }
           return; // Exit this attempt
@@ -519,15 +537,15 @@ Remember: You're here to be a supportive brother, but respect goes both ways. St
       }
 
       // If no fallback available or different error, provide local fallback
-      yield* _getLocalFallbackResponse();
+      yield* _getLocalFallbackResponse(gender);
     }
   }
 
   /// Provide a local fallback response when all models are unavailable
-  Stream<String> _getLocalFallbackResponse() async* {
-    developer.log('Providing local fallback response', name: 'OpenRouterService');
+  Stream<String> _getLocalFallbackResponse(UserGender gender) async* {
+    developer.log('Providing local fallback response for ${gender.displayName}', name: 'OpenRouterService');
 
-    const fallbackMessage = '''Hey akhi, I'm having some technical difficulties right now, but I'm still here for you. 🤲
+    final fallbackMessage = '''Hey ${gender.casualAddress}, I'm having some technical difficulties right now, but I'm still here for you. 🤲
 
 While I sort this out, remember that Allah (SWT) is always with you, even in the hardest moments. Take a deep breath, make du'a, and know that this too shall pass.
 
@@ -535,7 +553,7 @@ If you're in crisis or need immediate help, please reach out to:
 🇬🇧 UK: Samaritans - 116 123 (free, 24/7)
 🌍 Or your local emergency services
 
-I'll be back to full capacity soon, insha'Allah. Stay strong, brother. 💙''';
+I'll be back to full capacity soon, insha'Allah. Stay strong, ${gender.formalAddress}. 💙''';
 
     // Simulate typing effect for natural feel
     final words = fallbackMessage.split(' ');

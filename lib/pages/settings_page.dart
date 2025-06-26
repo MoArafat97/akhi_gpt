@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:developer' as developer;
 import '../utils/settings_util.dart';
+import '../utils/gender_util.dart';
 import '../services/hive_service.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -42,6 +43,9 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
+          _SectionHeader('Profile'),
+          _GenderSelectionTile(),
+
           _SectionHeader('Chat'),
           _SwitchTile('Streaming responses', 'streaming', defaultOn: true),
           _SaveChatHistorySwitchTile(),
@@ -78,6 +82,16 @@ class _SettingsPageState extends State<SettingsPage> {
                 style: const TextStyle(color: Colors.white70),
               ),
             ),
+          ),
+
+          _SectionHeader('Developer'),
+          ListTile(
+            leading: const Icon(Icons.play_circle_outline, color: Colors.white),
+            title: const Text('Test Onboarding Flow', style: TextStyle(color: Colors.white)),
+            subtitle: const Text('Replay the onboarding experience', style: TextStyle(color: Colors.white70)),
+            onTap: () {
+              Navigator.pushNamed(context, '/onboard1');
+            },
           ),
         ],
       ),
@@ -499,6 +513,190 @@ class _SettingsPageState extends State<SettingsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Delete failed: $e')),
+        );
+      }
+    }
+  }
+
+  /// Gender selection tile for profile settings
+  Widget _GenderSelectionTile() {
+    return FutureBuilder<UserGender>(
+      future: GenderUtil.getUserGender(),
+      builder: (context, snapshot) {
+        final currentGender = snapshot.data ?? UserGender.male;
+
+        return ListTile(
+          leading: Icon(
+            Icons.person,
+            color: Colors.white.withValues(alpha: 0.8),
+          ),
+          title: const Text(
+            'Companion Type',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+          ),
+          subtitle: Text(
+            currentGender.displayName,
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+          ),
+          trailing: Icon(
+            Icons.arrow_forward_ios,
+            color: Colors.white.withValues(alpha: 0.6),
+            size: 16,
+          ),
+          onTap: () => _showGenderSelectionDialog(currentGender),
+        );
+      },
+    );
+  }
+
+  /// Show gender selection dialog
+  void _showGenderSelectionDialog(UserGender currentGender) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF2D2D2D),
+          title: const Text(
+            'Choose Your Companion',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Who would you like to chat with?',
+                style: TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 20),
+
+              // Brother option
+              _buildGenderOption(
+                gender: UserGender.male,
+                currentGender: currentGender,
+                title: 'Brother',
+                description: 'A supportive older brother',
+                icon: Icons.person,
+              ),
+
+              const SizedBox(height: 12),
+
+              // Sister option
+              _buildGenderOption(
+                gender: UserGender.female,
+                currentGender: currentGender,
+                title: 'Sister',
+                description: 'A caring older sister',
+                icon: Icons.person,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Build gender option widget for dialog
+  Widget _buildGenderOption({
+    required UserGender gender,
+    required UserGender currentGender,
+    required String title,
+    required String description,
+    required IconData icon,
+  }) {
+    final isSelected = gender == currentGender;
+
+    return InkWell(
+      onTap: () => _changeGender(gender),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected
+            ? const Color(0xFF9C6644).withValues(alpha: 0.3)
+            : Colors.transparent,
+          border: Border.all(
+            color: isSelected
+              ? const Color(0xFF9C6644)
+              : Colors.white24,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? const Color(0xFF9C6644) : Colors.white70,
+              size: 24,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: isSelected ? const Color(0xFF9C6644) : Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: isSelected ? const Color(0xFF9C6644).withValues(alpha: 0.8) : Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              const Icon(
+                Icons.check_circle,
+                color: Color(0xFF9C6644),
+                size: 20,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Change user gender with confirmation
+  void _changeGender(UserGender newGender) async {
+    Navigator.of(context).pop(); // Close dialog
+
+    try {
+      await GenderUtil.setUserGender(newGender);
+
+      if (mounted) {
+        setState(() {}); // Refresh the UI
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Companion changed to ${newGender.displayName}'),
+            backgroundColor: const Color(0xFF9C6644),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to change companion: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }

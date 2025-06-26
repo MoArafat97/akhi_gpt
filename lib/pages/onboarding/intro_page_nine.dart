@@ -139,6 +139,28 @@ class _IntroPageNineState extends State<IntroPageNine>
           ),
         ),
         const SizedBox(width: 8),
+        // Page 7A dot (inactive)
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFFD0C5BA), // Inactive light brown
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Page 7B dot (inactive)
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFFD0C5BA), // Inactive light brown
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
         // Page 7 dot (inactive)
         AnimatedContainer(
           duration: const Duration(milliseconds: 300),
@@ -161,7 +183,40 @@ class _IntroPageNineState extends State<IntroPageNine>
           ),
         ),
         const SizedBox(width: 8),
-        // Page 9 dot (active)
+        // Page 7C dot (inactive)
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFFD0C5BA), // Inactive light brown
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Page 8 dot (inactive)
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFFD0C5BA), // Inactive light brown
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Page 9 dot (inactive)
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFFD0C5BA), // Inactive light brown
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Page 10 dot (active) - this is the current page
         AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           width: 12,
@@ -219,7 +274,7 @@ class _IntroPageNineState extends State<IntroPageNine>
                   ),
                 ),
 
-                // ✨ FEATURE: Animated progress indicator dots (9 dots, page 9 active)
+                // ✨ FEATURE: Animated progress indicator dots (11 dots, page 10 active)
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: _buildProgressDots(),
@@ -287,8 +342,8 @@ class _IntroPageNineState extends State<IntroPageNine>
                                       _isPressed = false;
                                       _isButtonPressed = false;
                                     });
-                                    // ✨ NAVIGATION: Navigate to card navigation page
-                                    navigator.pushNamed('/card_navigation');
+                                    // ✨ NAVIGATION: Navigate to gender selection page (now page 11)
+                                    navigator.pushNamed('/onboard11');
                                   }
                                 });
                               },
