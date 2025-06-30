@@ -349,8 +349,8 @@ class _IntroPageNineState extends State<IntroPageNine>
                                       _isPressed = false;
                                       _isButtonPressed = false;
                                     });
-                                    // ✨ NAVIGATION: Navigate to gender selection page (now page 11)
-                                    navigator.pushNamed('/onboard11');
+                                    // ✨ NAVIGATION: Navigate directly to name input page
+                                    navigator.pushNamed('/onboard12');
                                   }
                                 });
                               },
@@ -363,7 +363,7 @@ class _IntroPageNineState extends State<IntroPageNine>
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  'Yes...',
+                                  'I AMM READY...',
                                   style: GoogleFonts.lexend(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w500,

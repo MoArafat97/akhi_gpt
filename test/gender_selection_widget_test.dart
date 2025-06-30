@@ -16,7 +16,7 @@ void main() {
     Widget createTestWidget(Widget child) {
       return MaterialApp(
         localizationsDelegates: const [
-          AppLocalizations.delegate,
+          // AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,

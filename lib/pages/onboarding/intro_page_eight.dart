@@ -351,7 +351,7 @@ class _IntroPageEightState extends State<IntroPageEight>
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  'okay',
+                                  'OKAY...',
                                   style: GoogleFonts.lexend(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w500,

@@ -1,4 +1,4 @@
-package com.example.akhi_gpt
+package com.moarafat.akhi_gpt
 
 import io.flutter.embedding.android.FlutterActivity
 

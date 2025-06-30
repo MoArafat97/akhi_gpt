@@ -223,9 +223,6 @@ cd akhi-gpt
 # Install Flutter dependencies
 flutter pub get
 
-# Install Node.js dependencies for proxy
-npm install
-
 # Configure environment
 cp .env.example .env
 # Edit .env with your OpenRouter API key
@@ -234,49 +231,9 @@ cp .env.example .env
 flutter run
 ```
 
-#### **Proxy Deployment**
-```bash
-# Deploy to Google Cloud Functions
-./deploy.sh "your-openrouter-api-key" "deepseek/deepseek-r1-0528-qwen3-8b:free"
-
-# Or run locally for development
-npm start
-```
-
 ---
 
-## 🧪 **Testing**
 
-### **Run Tests**
-```bash
-# Flutter tests
-flutter test
-
-# Proxy system tests
-node test-proxy.js
-
-# Analyze code quality
-flutter analyze
-```
-
-### **Test Coverage**
-- ✅ Chat functionality and streaming
-- ✅ Fallback system reliability
-- ✅ Database operations (Hive)
-- ✅ Settings and configuration
-- ✅ Proxy system and rate limiting
-
----
-
-## 📚 **Documentation**
-
-- **[Enhanced Proxy System](ENHANCED_PROXY_SYSTEM.md)**: Technical details of the proxy architecture
-- **[Fallback System](FALLBACK_SYSTEM.md)**: How intelligent fallbacks work
-- **[Implementation Summary](IMPLEMENTATION_SUMMARY.md)**: Complete feature overview
-- **[Chat Proxy README](CHAT_PROXY_README.md)**: Proxy deployment and configuration
-- **[Settings Implementation](SETTINGS_IMPLEMENTATION.md)**: User settings and preferences
-
----
 
 ## 🤝 **Contributing**
 
@@ -286,7 +243,6 @@ We welcome contributions from the Muslim tech community! Please read our contrib
 - **UI/UX**: Improve Islamic design elements
 - **Localization**: Add Arabic and other language support
 - **Features**: Enhance mental health tools
-- **Testing**: Expand test coverage
 - **Documentation**: Improve guides and tutorials
 
 ### **Development Workflow**

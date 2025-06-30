@@ -21,7 +21,7 @@ void main() {
     Widget createTestApp() {
       return MaterialApp(
         localizationsDelegates: const [
-          AppLocalizations.delegate,
+          // AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
@@ -53,7 +53,7 @@ void main() {
       // (In a real test, we'd navigate through all pages)
       await tester.pumpWidget(MaterialApp(
         localizationsDelegates: const [
-          AppLocalizations.delegate,
+          // AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
@@ -92,7 +92,7 @@ void main() {
       // Navigate to gender selection
       await tester.pumpWidget(MaterialApp(
         localizationsDelegates: const [
-          AppLocalizations.delegate,
+          // AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
@@ -174,7 +174,7 @@ void main() {
       // First app session - set gender
       await tester.pumpWidget(MaterialApp(
         localizationsDelegates: const [
-          AppLocalizations.delegate,
+          // AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
