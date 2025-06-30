@@ -74,3 +74,31 @@ akhi-gpt-874296e18089.json
 keystore.b64
 play-key.b64
 release-key.jks
+
+# Android signing files (additional patterns)
+android/key.properties
+android/app/keystore.jks
+android/app/*.keystore
+android/app/*.jks
+android/app/*.p12
+android/app/*.pfx
+upload-keystore.jks
+akhi_gpt_keystore.jks
+
+# Service account and credential files
+*-service-account.json
+*-credentials.json
+google-services.json
+GoogleService-Info.plist
+
+# Additional environment files
+.env.local
+.env.development
+.env.staging
+.env.production
+.env.*.local
+
+# API keys and tokens (patterns)
+**/api-keys.txt
+**/tokens.txt
+**/secrets.txt
