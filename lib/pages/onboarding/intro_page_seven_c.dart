@@ -43,7 +43,7 @@ class _IntroPageSevenCState extends State<IntroPageSevenC>
 
     _illustrationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 1200), // Slightly longer for smoother animation
     );
 
     _progressController = AnimationController(
@@ -77,13 +77,13 @@ class _IntroPageSevenCState extends State<IntroPageSevenC>
       curve: Curves.easeInOut,
     ));
 
-    // Illustration animations
+    // Illustration animations - optimized for smoother performance
     _illustrationFadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _illustrationController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOutCubic,
     ));
 
     _illustrationSlideAnimation = Tween<Offset>(
@@ -91,7 +91,7 @@ class _IntroPageSevenCState extends State<IntroPageSevenC>
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _illustrationController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOutCubic,
     ));
 
     // Progress dot scale animation

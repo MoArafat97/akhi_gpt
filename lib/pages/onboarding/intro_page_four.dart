@@ -26,10 +26,13 @@ class _IntroPageFourState extends State<IntroPageFour>
   void initState() {
     super.initState();
 
-    // Character-by-character typewriter effect (slower)
+    // Optimized character-by-character typewriter effect
+    // Using 60ms per character for smooth, natural typing speed
+    final typingDuration = (_fullText.length * 60).clamp(2000, 5000);
+
     _typewriterController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 6000), // Much slower typing duration (6 seconds)
+      duration: Duration(milliseconds: typingDuration),
     );
 
     _typewriterAnimation = IntTween(
@@ -37,11 +40,15 @@ class _IntroPageFourState extends State<IntroPageFour>
       end: _fullText.length,
     ).animate(CurvedAnimation(
       parent: _typewriterController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOut, // Smoother curve for natural typing feel
     ))..addListener(() {
-      setState(() {
-        _displayedText = _fullText.substring(0, _typewriterAnimation.value);
-      });
+      // Optimize: Only update if the character index actually changed
+      final newText = _fullText.substring(0, _typewriterAnimation.value);
+      if (newText != _displayedText) {
+        setState(() {
+          _displayedText = newText;
+        });
+      }
     });
 
     // Start animation after a delay
@@ -51,8 +58,8 @@ class _IntroPageFourState extends State<IntroPageFour>
       }
     });
 
-    // Fallback timer to show button after animation completes
-    Future.delayed(const Duration(milliseconds: 7000), () {
+    // Fallback timer to show button after animation completes + buffer
+    Future.delayed(Duration(milliseconds: typingDuration + 1000), () {
       if (mounted && !_isTypingComplete) {
         setState(() {
           _showButtonFallback = true;

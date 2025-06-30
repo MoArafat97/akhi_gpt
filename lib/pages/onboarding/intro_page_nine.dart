@@ -26,10 +26,13 @@ class _IntroPageNineState extends State<IntroPageNine>
   void initState() {
     super.initState();
 
-    // Character-by-character typewriter effect (slower, ~120ms per character)
+    // Optimized character-by-character typewriter effect
+    // Using 60ms per character for smooth, natural typing speed
+    final typingDuration = (_fullText.length * 60).clamp(2000, 4000);
+
     _typewriterController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: _fullText.length * 120), // ~120ms per character for dramatic effect
+      duration: Duration(milliseconds: typingDuration),
     );
 
     _typewriterAnimation = IntTween(
@@ -37,11 +40,15 @@ class _IntroPageNineState extends State<IntroPageNine>
       end: _fullText.length,
     ).animate(CurvedAnimation(
       parent: _typewriterController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOut, // Smoother curve for natural typing feel
     ))..addListener(() {
-      setState(() {
-        _displayedText = _fullText.substring(0, _typewriterAnimation.value);
-      });
+      // Optimize: Only update if the character index actually changed
+      final newText = _fullText.substring(0, _typewriterAnimation.value);
+      if (newText != _displayedText) {
+        setState(() {
+          _displayedText = newText;
+        });
+      }
     });
 
     // Start animation after a delay
@@ -51,8 +58,8 @@ class _IntroPageNineState extends State<IntroPageNine>
       }
     });
 
-    // Fallback timeout to show button if animation takes too long
-    Future.delayed(const Duration(milliseconds: 4000), () {
+    // Fallback timeout to show button after animation completes + buffer
+    Future.delayed(Duration(milliseconds: typingDuration + 1000), () {
       if (mounted && !_showButtonFallback) {
         setState(() {
           _showButtonFallback = true;
@@ -342,8 +349,8 @@ class _IntroPageNineState extends State<IntroPageNine>
                                       _isPressed = false;
                                       _isButtonPressed = false;
                                     });
-                                    // ✨ NAVIGATION: Navigate to gender selection page (now page 11)
-                                    navigator.pushNamed('/onboard11');
+                                    // ✨ NAVIGATION: Navigate directly to name input page
+                                    navigator.pushNamed('/onboard12');
                                   }
                                 });
                               },
@@ -356,7 +363,7 @@ class _IntroPageNineState extends State<IntroPageNine>
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  'Yes...',
+                                  'I AMM READY...',
                                   style: GoogleFonts.lexend(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w500,

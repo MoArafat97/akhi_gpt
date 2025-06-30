@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:developer' as developer;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/chat_message.dart';
 import '../models/chat_history.dart';
 import '../services/openrouter_service.dart';
 import '../services/hive_service.dart';
 import '../utils/settings_util.dart';
 import '../utils/gender_util.dart';
+import '../services/subscription_service.dart';
+import '../services/message_counter_service.dart';
+import 'paywall_screen.dart';
 // import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -37,17 +41,21 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeService();
-    // Load user gender preference
-    _loadUserGender();
-    // Load lockout state with error handling
-    _loadLockoutState().catchError((error) {
-      developer.log('Failed to load lockout state in initState: $error', name: 'ChatScreen');
+
+    // Defer initialization until after the widget tree is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeService();
+      // Load user gender preference
+      _loadUserGender();
+      // Load lockout state with error handling
+      _loadLockoutState().catchError((error) {
+        developer.log('Failed to load lockout state in initState: $error', name: 'ChatScreen');
+      });
+      // Test connection on startup
+      _testConnection();
+      // Load chat history if enabled
+      _loadChatHistoryIfEnabled();
     });
-    // Test connection on startup
-    _testConnection();
-    // Load chat history if enabled
-    _loadChatHistoryIfEnabled();
   }
 
   /// Test OpenRouter connection on startup
@@ -67,18 +75,22 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  /// Load user gender preference
+  /// Load user preferences (gender, display name, personality)
   void _loadUserGender() async {
     try {
       final gender = await GenderUtil.getUserGender();
+      final displayName = await GenderUtil.getDisplayName();
+      final companionName = await GenderUtil.getCompanionName();
+
       setState(() {
         _userGender = gender;
-        // Update model display name based on gender
-        _currentModel = gender.companionName + ' Assistant';
+        // Use dynamic model display name based on personality settings
+        _currentModel = '$companionName Assistant';
       });
-      developer.log('Loaded user gender: ${gender.displayName}', name: 'ChatScreen');
+
+      developer.log('Loaded user preferences - Gender: ${gender.displayName}, Name: ${displayName ?? "not set"}, Companion: $companionName', name: 'ChatScreen');
     } catch (e) {
-      developer.log('Failed to load user gender: $e', name: 'ChatScreen');
+      developer.log('Failed to load user preferences: $e', name: 'ChatScreen');
       // Keep default gender (male) on error
     }
   }
@@ -95,10 +107,16 @@ class _ChatScreenState extends State<ChatScreen> {
       _currentModel = _openRouterService.modelDisplayName;
     });
 
-    // Check if service is configured and show error if not
-    developer.log('Service configured: ${_openRouterService.isConfigured}', name: 'ChatScreen');
+    // Debug: Check environment variables directly
+    final apiKey = dotenv.env['OPENROUTER_API_KEY'];
+    print('🔥 CHAT: Direct env check - API Key: ${apiKey != null ? "✅ Found (${apiKey.length} chars)" : "❌ Not found"}');
+    print('🔥 CHAT: All env keys: ${dotenv.env.keys.toList()}');
+    print('🔥 CHAT: Service configured: ${_openRouterService.isConfigured}');
+
     if (!_openRouterService.isConfigured) {
-      _showConfigurationError();
+      print('🔥 CHAT: ❌ Service not configured during initialization - but this might be a timing issue');
+    } else {
+      print('🔥 CHAT: ✅ Service is properly configured during initialization');
     }
   }
 
@@ -241,6 +259,8 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showConfigurationError() {
+    if (!mounted) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -292,6 +312,23 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _messageController.text.trim();
     if (text.isEmpty || _isLoading) return;
 
+    // Check if service is configured
+    if (!_openRouterService.isConfigured) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'App not configured. Please check your API key.',
+              style: GoogleFonts.inter(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+      return;
+    }
+
     // Check if chat is locked
     if (_isChatLocked) {
       final remainingTime = _lockedUntil!.difference(DateTime.now());
@@ -312,6 +349,29 @@ class _ChatScreenState extends State<ChatScreen> {
       }
       return;
     }
+
+    // Check message limits for free users
+    final canSend = await MessageCounterService.instance.canSendMessage();
+    if (!canSend) {
+      // Show paywall for message limit reached
+      final result = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (context) => const PaywallScreen(source: 'messages'),
+        ),
+      );
+
+      // If user purchased premium, refresh subscription status and allow message
+      if (result == true) {
+        await SubscriptionService.instance.refreshSubscriptionStatus();
+        // Continue with sending message
+      } else {
+        // User didn't purchase, don't send message
+        return;
+      }
+    }
+
+    // Increment message count (this will succeed since we checked canSend above)
+    await MessageCounterService.instance.incrementMessageCount();
 
     // Check for offensive content
     if (_isOffensiveContent(text)) {
@@ -365,7 +425,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       // Get streaming response
       developer.log('Starting chat stream for message: $text', name: 'ChatScreen');
-      final stream = _openRouterService.chatStream(text, _messages.sublist(0, _messages.length - 1), gender: _userGender);
+      final stream = _openRouterService.chatStream(text, _messages.sublist(0, _messages.length - 1));
       final buffer = StringBuffer();
 
       await for (final chunk in stream) {
@@ -462,19 +522,25 @@ class _ChatScreenState extends State<ChatScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Chat with ${_userGender.companionName}',
+                            'Your safe space',
                             style: GoogleFonts.lexend(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFFFCF8F1),
                             ),
                           ),
-                          Text(
-                            'Model: $_currentModel',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: const Color(0xFFFCF8F1),
-                            ),
+                          FutureBuilder<String>(
+                            future: GenderUtil.getCompanionName(),
+                            builder: (context, snapshot) {
+                              final companionName = snapshot.data ?? 'Akhi';
+                              return Text(
+                                'Model: $companionName',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: const Color(0xFFFCF8F1),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -493,31 +559,37 @@ class _ChatScreenState extends State<ChatScreen> {
               Expanded(
                 child: _messages.isEmpty
                     ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.chat_bubble_outline,
-                              size: 64,
-                              color: const Color(0xFFFCF8F1).withValues(alpha: 0.7),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Start a conversation',
-                              style: GoogleFonts.lexend(
-                                fontSize: 18,
-                                color: const Color(0xFFFCF8F1),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Type a message below to begin',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                color: const Color(0xFFFCF8F1).withValues(alpha: 0.7),
-                              ),
-                            ),
-                          ],
+                        child: FutureBuilder<String?>(
+                          future: GenderUtil.getDisplayName(),
+                          builder: (context, snapshot) {
+                            final displayName = snapshot.data ?? 'friend';
+                            return Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.chat_bubble_outline,
+                                  size: 64,
+                                  color: const Color(0xFFFCF8F1).withValues(alpha: 0.7),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Hey $displayName! 👋',
+                                  style: GoogleFonts.lexend(
+                                    fontSize: 18,
+                                    color: const Color(0xFFFCF8F1),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'What\'s on your mind today?',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: const Color(0xFFFCF8F1).withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       )
                     : ListView.builder(

@@ -23,14 +23,14 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     try {
-      // Check if gender has been set
-      final isGenderSet = await GenderUtil.isGenderSet();
-      
-      if (isGenderSet) {
-        // Gender is set, go directly to main app
+      // Check if onboarding has been completed (including new pages)
+      final isOnboardingComplete = await GenderUtil.isOnboardingComplete();
+
+      if (isOnboardingComplete) {
+        // Onboarding complete, go directly to main app
         Navigator.pushReplacementNamed(context, '/card_navigation');
       } else {
-        // Gender not set, start onboarding
+        // Onboarding not complete, start from beginning
         Navigator.pushReplacementNamed(context, '/onboard1');
       }
     } catch (e) {

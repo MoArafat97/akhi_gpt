@@ -39,14 +39,6 @@ This major release transforms the app from a male-only experience to a fully gen
 - Default companion type is Akhi (brother) for backward compatibility
 - All existing functionality remains unchanged, just with added gender awareness
 
-### Testing
-- Added comprehensive test suite covering:
-  - Gender utility functions
-  - System prompt generation
-  - Widget behavior for gender selection
-  - Integration tests for complete user flows
-  - Settings page gender management
-
 ### Developer Experience
 - Enhanced code organization with gender-aware services
 - Improved type safety with UserGender enum

@@ -48,13 +48,9 @@ class ConfigHelper {
     await _secureStorage.delete(key: 'model_failure_count');
   }
 
-  /// Get the list of available fallback models
+  /// Get the list of available fallback models from environment
   static List<String> getFallbackModels() {
-    return [
-      'deepseek/deepseek-r1-0528-qwen3-8b:free',
-      'qwen/qwen-2.5-72b-instruct:free',
-      'qwen/qwen-2.5-32b-instruct:free',
-    ];
+    return _service.fallbackModels;
   }
 }
 

@@ -8,6 +8,9 @@ import 'dart:developer' as developer;
 import '../utils/settings_util.dart';
 import '../utils/gender_util.dart';
 import '../services/hive_service.dart';
+import '../services/settings_service.dart';
+import '../widgets/personality_settings_widget.dart';
+import '../widgets/subscription_status_widget.dart';
 
 class SettingsPage extends StatefulWidget {
   final Color bgColor;
@@ -22,17 +25,79 @@ class _SettingsPageState extends State<SettingsPage> {
   static const _secure = FlutterSecureStorage();
   final _hiveService = HiveService.instance;
 
+  // Developer mode state
+  bool _isDeveloperMode = false;
+  int _tapCount = 0;
+  DateTime? _lastTap;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDeveloperMode();
+  }
+
+  /// Load developer mode state
+  Future<void> _loadDeveloperMode() async {
+    final isDeveloper = await SettingsService.isDeveloperModeEnabled();
+    if (mounted) {
+      setState(() {
+        _isDeveloperMode = isDeveloper;
+      });
+    }
+  }
+
+  /// Handle secret gesture on Settings title
+  void _handleSecretTap() async {
+    final now = DateTime.now();
+
+    // Reset tap count if more than 2 seconds have passed
+    if (_lastTap == null || now.difference(_lastTap!) > const Duration(seconds: 2)) {
+      _tapCount = 1;
+    } else {
+      _tapCount++;
+    }
+
+    _lastTap = now;
+
+    // Check if we've reached 7 taps
+    if (_tapCount >= 7) {
+      _tapCount = 0;
+      final newState = await SettingsService.toggleDeveloperMode();
+
+      if (mounted) {
+        setState(() {
+          _isDeveloperMode = newState;
+        });
+
+        // Show feedback
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              newState ? 'Developer mode enabled' : 'Developer mode disabled',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: newState ? Colors.green : Colors.orange,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: widget.bgColor,
       appBar: AppBar(
         backgroundColor: widget.bgColor.withValues(alpha: 0.9),
-        title: const Text(
-          'Settings',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
+        title: GestureDetector(
+          onTap: _handleSecretTap,
+          child: const Text(
+            'Settings',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         leading: IconButton(
@@ -43,8 +108,11 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
+          _SectionHeader('Subscription'),
+          const SubscriptionStatusWidget(),
+
           _SectionHeader('Profile'),
-          _GenderSelectionTile(),
+          const PersonalitySettingsWidget(),
 
           _SectionHeader('Chat'),
           _SwitchTile('Streaming responses', 'streaming', defaultOn: true),
@@ -84,15 +152,30 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
 
-          _SectionHeader('Developer'),
-          ListTile(
-            leading: const Icon(Icons.play_circle_outline, color: Colors.white),
-            title: const Text('Test Onboarding Flow', style: TextStyle(color: Colors.white)),
-            subtitle: const Text('Replay the onboarding experience', style: TextStyle(color: Colors.white70)),
-            onTap: () {
-              Navigator.pushNamed(context, '/onboard1');
-            },
-          ),
+          // Developer section - only show when developer mode is enabled
+          if (_isDeveloperMode) ...[
+            _SectionHeader('Developer'),
+            ListTile(
+              leading: const Icon(Icons.play_circle_outline, color: Colors.white),
+              title: const Text('Test Onboarding Flow', style: TextStyle(color: Colors.white)),
+              subtitle: const Text('Replay the onboarding experience', style: TextStyle(color: Colors.white70)),
+              onTap: () async {
+                if (await SettingsService.canAccessDeveloperRoute('/onboard1')) {
+                  Navigator.pushNamed(context, '/onboard1');
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.bug_report, color: Colors.white),
+              title: const Text('API Diagnostics', style: TextStyle(color: Colors.white)),
+              subtitle: const Text('Test API connectivity and configuration', style: TextStyle(color: Colors.white70)),
+              onTap: () async {
+                if (await SettingsService.canAccessDeveloperRoute('/diagnostics')) {
+                  Navigator.pushNamed(context, '/diagnostics');
+                }
+              },
+            ),
+          ],
         ],
       ),
     );

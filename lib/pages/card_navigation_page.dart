@@ -4,6 +4,8 @@ import 'chat_page.dart';
 import 'journal_page.dart';
 import 'analytics_page.dart';
 import 'settings_page.dart';
+import '../utils/gender_util.dart';
+import '../services/settings_service.dart';
 
 // Navigation card data structure
 class _NavCard {
@@ -13,6 +15,9 @@ class _NavCard {
   final Widget destination;
 
   const _NavCard(this.title, this.icon, this.color, this.destination);
+
+  // Non-const constructor for dynamic titles
+  _NavCard.dynamic(this.title, this.icon, this.color, this.destination);
 }
 
 class CardNavigationPage extends StatefulWidget {
@@ -23,15 +28,42 @@ class CardNavigationPage extends StatefulWidget {
 }
 
 class _CardNavigationPageState extends State<CardNavigationPage> {
-  // Card data with updated colors
-  final List<_NavCard> _cards = [
-    const _NavCard('Chat to me Habibi', Icons.chat_bubble_outline, Color(0xFF7B4F2F), ChatPage()),
-    const _NavCard('Journal', Icons.book_rounded, Color(0xFFA8B97F), JournalPage()),
-    const _NavCard('Analytics', Icons.bar_chart_rounded, Color(0xFFC76C5A), AnalyticsPage()),
-    const _NavCard('Settings', Icons.settings, Color(0xFFB7AFA3), SettingsPage()),
-    const _NavCard('🧪 Test Onboarding', Icons.play_circle_outline, Color(0xFF8E44AD), SettingsPage()), // Purple for testing
-    const _NavCard('Work in Progress', Icons.construction, Color(0xFF6D88A7), SettingsPage()),
-  ];
+  // Dynamic card data that will be built with user's name
+  List<_NavCard> _cards = [];
+  bool _isDeveloperMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _buildCards();
+    _loadDeveloperMode();
+  }
+
+  /// Load developer mode state
+  Future<void> _loadDeveloperMode() async {
+    final isDeveloper = await SettingsService.isDeveloperModeEnabled();
+    if (mounted) {
+      setState(() {
+        _isDeveloperMode = isDeveloper;
+      });
+    }
+  }
+
+  // Build cards with user's actual name
+  Future<void> _buildCards() async {
+    final displayName = await GenderUtil.getDisplayName();
+    final userName = displayName ?? 'friend';
+
+    setState(() {
+      _cards = [
+        _NavCard.dynamic('Chat to me $userName', Icons.chat_bubble_outline, const Color(0xFF7B4F2F), const ChatPage()),
+        const _NavCard('Journal', Icons.book_rounded, Color(0xFFA8B97F), JournalPage()),
+        const _NavCard('Analytics', Icons.bar_chart_rounded, Color(0xFFC76C5A), AnalyticsPage()),
+        const _NavCard('Settings', Icons.settings, Color(0xFFB7AFA3), SettingsPage()),
+        const _NavCard('Work in Progress', Icons.construction, Color(0xFF6D88A7), SettingsPage()),
+      ];
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,41 +120,44 @@ class _CardNavigationPageState extends State<CardNavigationPage> {
             ),
           ),
 
-          // ✨ TEST BUTTON: Access onboarding pages for testing
-          Container(
-            margin: const EdgeInsets.only(top: 8.0),
-            child: TextButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/onboard1');
-              },
-              style: TextButton.styleFrom(
-                backgroundColor: const Color(0xFF9C6644).withValues(alpha: 0.1),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.play_arrow,
-                    size: 16,
-                    color: const Color(0xFF9C6644),
+          // ✨ TEST BUTTON: Access onboarding pages for testing (developer mode only)
+          if (_isDeveloperMode)
+            Container(
+              margin: const EdgeInsets.only(top: 8.0),
+              child: TextButton(
+                onPressed: () async {
+                  if (await SettingsService.canAccessDeveloperRoute('/onboard1')) {
+                    Navigator.pushNamed(context, '/onboard1');
+                  }
+                },
+                style: TextButton.styleFrom(
+                  backgroundColor: const Color(0xFF9C6644).withValues(alpha: 0.1),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Test Onboarding',
-                    style: GoogleFonts.lexend(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.play_arrow,
+                      size: 16,
                       color: const Color(0xFF9C6644),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Text(
+                      'Test Onboarding',
+                      style: GoogleFonts.lexend(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF9C6644),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -130,6 +165,15 @@ class _CardNavigationPageState extends State<CardNavigationPage> {
 
   /// Build wallet-style card stack with header-reveal approach for readable card headers
   Widget _buildWalletCardStack(BuildContext context) {
+    // Show loading indicator while cards are being built
+    if (_cards.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFF9C6644),
+        ),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         // Calculate available height for the card stack area
