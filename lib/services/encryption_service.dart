@@ -110,13 +110,5 @@ class EncryptionService {
     return data;
   }
 
-  /// Delete encryption key (for testing or reset purposes)
-  static Future<void> deleteEncryptionKey() async {
-    try {
-      await _secureStorage.delete(key: _encryptionKeyName);
-      developer.log('Encryption key deleted', name: 'EncryptionService');
-    } catch (e) {
-      developer.log('Error deleting encryption key: $e', name: 'EncryptionService');
-    }
-  }
+
 }

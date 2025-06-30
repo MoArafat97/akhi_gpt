@@ -53,3 +53,34 @@
 -keepattributes *Annotation*
 -keepattributes EnclosingMethod
 -keepattributes InnerClasses
+
+# Play Feature Delivery library rules (replaces old Play Core)
+# Required for Flutter's deferred components support and Android 14 compatibility
+-keep class com.google.android.play.core.splitcompat.** { *; }
+-keep class com.google.android.play.core.splitinstall.** { *; }
+
+# Keep Play Feature Delivery classes
+-keep class com.google.android.play.core.featuredelivery.** { *; }
+
+# Google Play Services Tasks API (used by new Play libraries)
+-keep class com.google.android.gms.tasks.** { *; }
+-keep class com.google.android.play.core.tasks.** { *; }
+
+# Keep listeners and callbacks for deferred components
+-keep class * implements com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener { *; }
+-keep class * implements com.google.android.gms.tasks.OnSuccessListener { *; }
+-keep class * implements com.google.android.gms.tasks.OnFailureListener { *; }
+-keep class * implements com.google.android.play.core.tasks.OnSuccessListener { *; }
+-keep class * implements com.google.android.play.core.tasks.OnFailureListener { *; }
+
+# Prevent obfuscation of exception classes
+-keep class com.google.android.play.core.splitinstall.SplitInstallException { *; }
+
+# Keep request builders
+-keep class com.google.android.play.core.splitinstall.SplitInstallRequest$Builder { *; }
+-keep class com.google.android.play.core.splitinstall.SplitInstallRequest { *; }
+
+# Suppress warnings for missing Play Core Tasks classes (replaced by Google Play Services Tasks)
+-dontwarn com.google.android.play.core.tasks.OnFailureListener
+-dontwarn com.google.android.play.core.tasks.OnSuccessListener
+-dontwarn com.google.android.play.core.tasks.Task
