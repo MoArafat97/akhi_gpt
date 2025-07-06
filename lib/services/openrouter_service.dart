@@ -265,7 +265,7 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
   /// Test connection to OpenRouter API or proxy
   Future<bool> testConnection() async {
     try {
-      if (!isConfigured) {
+      if (!(await isConfigured)) {
         developer.log('Service not configured', name: 'OpenRouterService');
         return false;
       }
