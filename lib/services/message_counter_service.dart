@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'subscription_service.dart';
+import '../config/debug_config.dart';
 
 /// Service for tracking daily message usage and enforcing limits
 class MessageCounterService {
@@ -27,6 +28,10 @@ class MessageCounterService {
 
   /// Check if user has reached daily limit
   bool get hasReachedLimit {
+    // Debug bypass for testing
+    if (DebugConfig.skipPremium) {
+      return false; // Never reached limit in debug mode
+    }
     final limit = SubscriptionService.instance.dailyMessageLimit;
     return _currentCount >= limit;
   }
@@ -111,6 +116,11 @@ class MessageCounterService {
     if (hasReachedLimit) {
       developer.log('Message limit reached: $_currentCount/${SubscriptionService.instance.dailyMessageLimit}', name: 'MessageCounterService');
       return false;
+    }
+
+    // Debug logging
+    if (DebugConfig.skipPremium) {
+      developer.log('Debug mode: Bypassing message limit check', name: 'MessageCounterService');
     }
 
     try {

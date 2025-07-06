@@ -3,17 +3,15 @@ import 'dart:developer' as developer;
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/journal_entry.dart';
-import '../models/mood_entry.dart';
 import '../models/anonymous_letter.dart';
 import '../models/chat_history.dart';
 import 'encryption_service.dart';
 
 /// Singleton service for managing Hive database operations
-/// Provides offline-first local storage for journal entries, mood entries, and anonymous letters
+/// Provides offline-first local storage for journal entries and anonymous letters
 class HiveService {
   static HiveService? _instance;
   static Box<JournalEntry>? _journalBox;
-  static Box<MoodEntry>? _moodsBox;
   static Box<AnonymousLetter>? _lettersBox;
   static Box<ChatHistory>? _chatBox;
 
@@ -34,13 +32,7 @@ class HiveService {
     return _journalBox!;
   }
 
-  /// Get the moods box
-  Box<MoodEntry> get moodsBox {
-    if (_moodsBox == null || !_moodsBox!.isOpen) {
-      throw Exception('HiveService not initialized. Call init() first.');
-    }
-    return _moodsBox!;
-  }
+
 
   /// Get the letters box
   Box<AnonymousLetter> get lettersBox {
@@ -63,7 +55,6 @@ class HiveService {
   Future<void> init() async {
     try {
       if (_journalBox != null && _journalBox!.isOpen &&
-          _moodsBox != null && _moodsBox!.isOpen &&
           _lettersBox != null && _lettersBox!.isOpen &&
           _chatBox != null && _chatBox!.isOpen) {
         developer.log('HiveService already initialized', name: 'HiveService');
@@ -82,9 +73,6 @@ class HiveService {
       if (!Hive.isAdapterRegistered(0)) {
         Hive.registerAdapter(JournalEntryAdapter());
       }
-      if (!Hive.isAdapterRegistered(1)) {
-        Hive.registerAdapter(MoodEntryAdapter());
-      }
       if (!Hive.isAdapterRegistered(2)) {
         Hive.registerAdapter(AnonymousLetterAdapter());
       }
@@ -94,7 +82,6 @@ class HiveService {
 
       // Open the boxes
       _journalBox = await Hive.openBox<JournalEntry>('journal_entries');
-      _moodsBox = await Hive.openBox<MoodEntry>('moods');
       _lettersBox = await Hive.openBox<AnonymousLetter>('letters');
       _chatBox = await Hive.openBox<ChatHistory>('chat_history');
 
@@ -183,30 +170,7 @@ class HiveService {
     }
   }
 
-  /// Get entries by mood tag
-  Future<List<JournalEntry>> getEntriesByMood(String moodTag) async {
-    try {
-      developer.log('Fetching entries with mood: $moodTag', name: 'HiveService');
 
-      final entries = journalBox.values
-          .where((entry) => entry.moodTag == moodTag)
-          .toList();
-
-      // Sort by date (newest first)
-      entries.sort((a, b) => b.date.compareTo(a.date));
-
-      developer.log('Found ${entries.length} entries with mood: $moodTag', name: 'HiveService');
-      return entries;
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to fetch entries by mood: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
 
   /// Update an existing journal entry
   Future<void> updateEntry(JournalEntry entry) async {
@@ -333,14 +297,14 @@ class HiveService {
         _journalBox = null;
       }
 
-      if (_moodsBox != null && _moodsBox!.isOpen) {
-        await _moodsBox!.close();
-        _moodsBox = null;
-      }
-
       if (_lettersBox != null && _lettersBox!.isOpen) {
         await _lettersBox!.close();
         _lettersBox = null;
+      }
+
+      if (_chatBox != null && _chatBox!.isOpen) {
+        await _chatBox!.close();
+        _chatBox = null;
       }
 
       _instance = null;
@@ -356,93 +320,7 @@ class HiveService {
     }
   }
 
-  // ========== MOOD ENTRY METHODS ==========
 
-  /// Add a new mood entry
-  Future<int> addMoodEntry(MoodEntry entry) async {
-    try {
-      developer.log('Adding mood entry: ${entry.mood}', name: 'HiveService');
-
-      final key = await moodsBox.add(entry);
-
-      developer.log('Mood entry added with key: $key', name: 'HiveService');
-      return key;
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to add mood entry: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Get all mood entries, sorted by date (newest first)
-  Future<List<MoodEntry>> getMoodEntries() async {
-    try {
-      developer.log('Fetching all mood entries', name: 'HiveService');
-
-      final entries = moodsBox.values.toList();
-
-      // Sort by date (newest first)
-      entries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-      developer.log('Found ${entries.length} mood entries', name: 'HiveService');
-      return entries;
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to fetch mood entries: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Delete a mood entry
-  Future<bool> deleteMoodEntry(dynamic key) async {
-    try {
-      developer.log('Deleting mood entry key: $key', name: 'HiveService');
-
-      if (moodsBox.containsKey(key)) {
-        await moodsBox.delete(key);
-        developer.log('Mood entry deleted successfully', name: 'HiveService');
-        return true;
-      } else {
-        developer.log('Mood entry not found for deletion', name: 'HiveService');
-        return false;
-      }
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to delete mood entry: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Delete a mood entry object
-  Future<bool> deleteMoodEntryObject(MoodEntry entry) async {
-    try {
-      developer.log('Deleting mood entry: ${entry.mood}', name: 'HiveService');
-
-      await entry.delete();
-      developer.log('Mood entry deleted successfully', name: 'HiveService');
-      return true;
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to delete mood entry: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
 
   // ========== ANONYMOUS LETTER METHODS ==========
 

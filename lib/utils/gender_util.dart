@@ -217,6 +217,7 @@ class GenderUtil {
   static const String _personalityKey = 'user_personality';
   static const String _displayNameKey = 'user_display_name';
   static const String _onboardingCompleteKey = 'onboarding_complete';
+  static const String _hasSeenOnboardingKey = 'has_seen_onboarding';
   static const String _personalityStyleEnabledKey = 'personality_style_enabled';
   static const String _personalityStyleKey = 'personality_style';
 
@@ -295,6 +296,20 @@ class GenderUtil {
   static Future<void> setOnboardingComplete() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_onboardingCompleteKey, true);
+    // Also mark that user has seen onboarding (this should never be reset)
+    await prefs.setBool(_hasSeenOnboardingKey, true);
+  }
+
+  /// Check if user has ever seen onboarding (never reset)
+  static Future<bool> hasSeenOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_hasSeenOnboardingKey) ?? false;
+  }
+
+  /// Mark that user has seen onboarding (should only be called once)
+  static Future<void> setHasSeenOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_hasSeenOnboardingKey, true);
   }
 
   /// Check if personality style is enabled
@@ -352,6 +367,7 @@ class GenderUtil {
     await prefs.remove(_personalityKey);
     await prefs.remove(_displayNameKey);
     await prefs.remove(_onboardingCompleteKey);
+    await prefs.remove(_hasSeenOnboardingKey);
     await prefs.remove(_personalityStyleEnabledKey);
     await prefs.remove(_personalityStyleKey);
   }

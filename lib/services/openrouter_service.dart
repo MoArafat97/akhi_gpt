@@ -25,6 +25,9 @@ class OpenRouterService {
     'qwen/qwen-2.5-32b-instruct:free',          // Fallback 2
   ];
 
+  // Public getter for fallback models
+  static List<String> get fallbackModels => _fallbackModels;
+
   // Storage keys
   static const String _lastWorkingModelKey = 'last_working_model';
   static const String _modelFailureCountKey = 'model_failure_count';
