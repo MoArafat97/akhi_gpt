@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../utils/gender_util.dart';
+import '../services/user_api_key_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -30,8 +31,17 @@ class _SplashScreenState extends State<SplashScreen> {
         // User has never seen onboarding, show it and mark as seen
         await GenderUtil.setHasSeenOnboarding();
         Navigator.pushReplacementNamed(context, '/onboard1');
+        return;
+      }
+
+      // Check if user has set up their API key
+      final apiKeyStatus = await UserApiKeyService.instance.getApiKeyStatus();
+
+      if (apiKeyStatus == ApiKeyStatus.notSet) {
+        // User needs to set up their API key
+        Navigator.pushReplacementNamed(context, '/openrouter_setup');
       } else {
-        // User has seen onboarding before, go directly to main app
+        // User has seen onboarding and has API key, go to main app
         Navigator.pushReplacementNamed(context, '/card_navigation');
       }
     } catch (e) {

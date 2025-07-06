@@ -11,6 +11,8 @@ import '../services/hive_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/personality_settings_widget.dart';
 import '../widgets/subscription_status_widget.dart';
+import '../widgets/api_key_settings_widget.dart';
+import '../widgets/model_selection_widget.dart';
 
 class SettingsPage extends StatefulWidget {
   final Color bgColor;
@@ -110,6 +112,11 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           _SectionHeader('Subscription'),
           const SubscriptionStatusWidget(),
+
+          _SectionHeader('OpenRouter Configuration'),
+          const ApiKeySettingsWidget(),
+          const SizedBox(height: 8),
+          const ModelSelectionWidget(),
 
           _SectionHeader('Profile'),
           const PersonalitySettingsWidget(),
