@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_quill/flutter_quill.dart';
 import 'dart:developer' as developer;
 import '../services/hive_service.dart';
 import '../models/journal_entry.dart';
-import 'mood_select_page.dart';
 
 class NewNotePage extends StatefulWidget {
   const NewNotePage({super.key});
@@ -16,7 +14,7 @@ class NewNotePage extends StatefulWidget {
 class _NewNotePageState extends State<NewNotePage> {
   final HiveService _hiveService = HiveService.instance;
   final TextEditingController _titleController = TextEditingController();
-  late final QuillController _quillController;
+  final TextEditingController _contentController = TextEditingController();
 
   bool _isSaving = false;
 
@@ -24,28 +22,25 @@ class _NewNotePageState extends State<NewNotePage> {
   void initState() {
     super.initState();
 
-    // Initialize QuillController
-    _quillController = QuillController.basic();
-
     // Set up auto-save listeners
     _titleController.addListener(_autoSave);
-    _quillController.addListener(_autoSave);
+    _contentController.addListener(_autoSave);
   }
 
   @override
   void dispose() {
     _titleController.dispose();
-    _quillController.dispose();
+    _contentController.dispose();
     super.dispose();
   }
 
   void _autoSave() {
     if (_isSaving) return;
-    
+
     // Auto-save to temporary storage
     final title = _titleController.text;
-    final content = _quillController.document.toPlainText();
-    
+    final content = _contentController.text;
+
     if (title.isNotEmpty || content.trim().isNotEmpty) {
       developer.log('Auto-saving note: $title', name: 'NewNotePage');
       // Note: We'll save the final entry only when user taps Save
@@ -54,10 +49,10 @@ class _NewNotePageState extends State<NewNotePage> {
 
   Future<void> _saveEntry() async {
     if (_isSaving) return;
-    
+
     final title = _titleController.text.trim();
-    final content = _quillController.document.toPlainText().trim();
-    
+    final content = _contentController.text.trim();
+
     if (title.isEmpty && content.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -75,7 +70,6 @@ class _NewNotePageState extends State<NewNotePage> {
       final entry = JournalEntry(
         title: title.isEmpty ? 'Untitled' : title,
         content: content.isEmpty ? 'No content' : content,
-        moodTag: null, // Will be set in mood selection page
       );
 
       // Save to Hive
@@ -83,17 +77,8 @@ class _NewNotePageState extends State<NewNotePage> {
       developer.log('Saved journal entry with key: $entryKey', name: 'NewNotePage');
 
       if (mounted) {
-        // Navigate to mood selection page and wait for result
-        final result = await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => MoodSelectPage(entryKey: entryKey),
-          ),
-        );
-
-        // Return result to indicate data was updated
-        if (mounted) {
-          Navigator.of(context).pop(result ?? true);
-        }
+        // Navigate back with success result
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       developer.log('Error saving entry: $e', name: 'NewNotePage');
@@ -176,48 +161,38 @@ class _NewNotePageState extends State<NewNotePage> {
               textCapitalization: TextCapitalization.sentences,
             ),
           ),
-          
+
           // Divider
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
             height: 1,
             color: const Color(0xFF4F372D).withValues(alpha: 0.1),
           ),
-          
-          // Rich text editor
+
+          // Content editor
           Expanded(
             child: Container(
               padding: const EdgeInsets.all(16),
-              child: QuillEditor.basic(
-                controller: _quillController,
-                config: QuillEditorConfig(
-                  placeholder: 'Start writing your thoughts...',
-                  padding: EdgeInsets.zero,
-                  customStyles: DefaultStyles(
-                    paragraph: DefaultTextBlockStyle(
-                      GoogleFonts.inter(
-                        color: const Color(0xFF4F372D),
-                        fontSize: 16,
-                        height: 1.5,
-                      ),
-                      const HorizontalSpacing(0, 0),
-                      const VerticalSpacing(6, 0),
-                      const VerticalSpacing(0, 0),
-                      null,
-                    ),
-                    placeHolder: DefaultTextBlockStyle(
-                      GoogleFonts.inter(
-                        color: const Color(0xFF4F372D).withValues(alpha: 0.4),
-                        fontSize: 16,
-                        height: 1.5,
-                      ),
-                      const HorizontalSpacing(0, 0),
-                      const VerticalSpacing(6, 0),
-                      const VerticalSpacing(0, 0),
-                      null,
-                    ),
-                  ),
+              child: TextField(
+                controller: _contentController,
+                maxLines: null,
+                expands: true,
+                style: GoogleFonts.inter(
+                  color: const Color(0xFF4F372D),
+                  fontSize: 16,
+                  height: 1.5,
                 ),
+                decoration: InputDecoration(
+                  hintText: 'Start writing your thoughts...',
+                  hintStyle: GoogleFonts.inter(
+                    color: const Color(0xFF4F372D).withValues(alpha: 0.4),
+                    fontSize: 16,
+                    height: 1.5,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                textCapitalization: TextCapitalization.sentences,
               ),
             ),
           ),

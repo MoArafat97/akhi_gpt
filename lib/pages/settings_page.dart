@@ -121,7 +121,6 @@ class _SettingsPageState extends State<SettingsPage> {
           _ChatHistoryTile(),
 
           _SectionHeader('Journal'),
-          _SwitchTile('Rich-text editor', 'richText', defaultOn: true),
           _DropdownTile('Autosave', 'autosave',
             ['Live', '30 s', 'On save'], defaultVal: 'Live'),
 

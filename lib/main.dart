@@ -8,6 +8,7 @@ import 'services/openrouter_service.dart';
 import 'services/subscription_service.dart';
 import 'services/message_counter_service.dart';
 import 'services/secure_config_service.dart';
+import 'config/debug_config.dart';
 import 'theme/app_theme.dart';
 import 'pages/onboarding/intro_page_one.dart';
 import 'pages/onboarding/intro_page_two.dart';
@@ -107,6 +108,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   print('🔥 MAIN: Flutter binding initialized');
 
+  // Log debug configuration
+  if (DebugConfig.hasDebugFlags) {
+    print('🔧 DEBUG: Debug flags enabled: ${DebugConfig.debugStatus}');
+  }
+
   try {
     print('🔥 MAIN: Attempting to load .env file...');
     await dotenv.load(fileName: ".env");
@@ -203,7 +209,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Companion GPT',
+      title: 'NafsAI',
       theme: AppTheme.companionTheme,
       localizationsDelegates: const [
         // AppLocalizations.delegate,

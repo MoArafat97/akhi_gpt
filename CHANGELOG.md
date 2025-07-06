@@ -22,7 +22,7 @@ This major release transforms the app from a male-only experience to a fully gen
 - **Comprehensive Testing**: Unit, widget, and integration tests for gender functionality
 
 ### Changed
-- **App Branding**: Updated from "Akhi GPT" to "Companion GPT" for gender neutrality
+- **App Branding**: Updated from "Akhi GPT" to "NafsAI" for gender neutrality
 - **System Prompts**: Completely refactored to be gender-aware with dynamic content
 - **Chat Interface**: Headers and messages now reflect chosen companion type
 - **Fallback Messages**: Error messages adapt to user's gender selection

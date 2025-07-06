@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'secure_config_service.dart';
+import '../config/debug_config.dart';
 
 /// Subscription tiers available in the app
 enum SubscriptionTier {
@@ -58,10 +59,23 @@ class SubscriptionService {
   CustomerInfo? _customerInfo;
 
   /// Get current subscription tier
-  SubscriptionTier get currentTier => _currentTier;
+  SubscriptionTier get currentTier {
+    // Debug bypass for testing
+    if (DebugConfig.skipPremium) {
+      return SubscriptionTier.premium;
+    }
+    return _currentTier;
+  }
 
   /// Check if user has premium subscription
-  bool get isPremium => _currentTier == SubscriptionTier.premium;
+  bool get isPremium {
+    // Debug bypass for testing
+    if (DebugConfig.skipPremium) {
+      developer.log('Debug mode: Bypassing premium check', name: 'SubscriptionService');
+      return true;
+    }
+    return _currentTier == SubscriptionTier.premium;
+  }
 
   /// Get customer info
   CustomerInfo? get customerInfo => _customerInfo;
@@ -245,6 +259,11 @@ class SubscriptionService {
 
   /// Check if a feature is available for current subscription tier
   bool isFeatureAvailable(String feature) {
+    // Debug bypass for testing
+    if (DebugConfig.skipPremium) {
+      return true; // All features available in debug mode
+    }
+
     switch (feature) {
       case 'personality_styles':
         return _currentTier.hasPersonalityStyles;
@@ -256,7 +275,13 @@ class SubscriptionService {
   }
 
   /// Get daily message limit for current tier
-  int get dailyMessageLimit => _currentTier.dailyMessageLimit;
+  int get dailyMessageLimit {
+    // Debug bypass for testing - unlimited messages
+    if (DebugConfig.skipPremium) {
+      return 999999; // Effectively unlimited for testing
+    }
+    return _currentTier.dailyMessageLimit;
+  }
 
   /// Refresh subscription status
   Future<void> refreshSubscriptionStatus() async {

@@ -13,14 +13,12 @@ class JournalEntry extends HiveObject {
   @HiveField(2)
   late String content;
 
-  @HiveField(3)
-  String? moodTag; // Optional mood tag (e.g., "happy", "sad", "anxious", etc.)
+
 
   // Constructor
   JournalEntry({
     required this.title,
     required this.content,
-    this.moodTag,
   }) {
     date = DateTime.now();
   }
@@ -30,7 +28,6 @@ class JournalEntry extends HiveObject {
     required DateTime customDate,
     required this.title,
     required this.content,
-    this.moodTag,
   }) {
     date = customDate;
   }
@@ -58,52 +55,27 @@ class JournalEntry extends HiveObject {
     return '$hour:$minute';
   }
 
-  // Helper method to get mood emoji
-  String get moodEmoji {
-    switch (moodTag?.toLowerCase()) {
-      case 'happy':
-        return '😊';
-      case 'sad':
-        return '😢';
-      case 'anxious':
-        return '😰';
-      case 'calm':
-        return '😌';
-      case 'excited':
-        return '🤩';
-      case 'angry':
-        return '😠';
-      case 'grateful':
-        return '🙏';
-      case 'hopeful':
-        return '🌟';
-      case 'peaceful':
-        return '☮️';
-      case 'confused':
-        return '😕';
-      default:
-        return '📝';
-    }
-  }
+
+
+  // Helper method to get display content
+  String get displayContent => content;
 
   // Copy method for updates
   JournalEntry copyWith({
     DateTime? date,
     String? title,
     String? content,
-    String? moodTag,
   }) {
     return JournalEntry.withDate(
       customDate: date ?? this.date,
       title: title ?? this.title,
       content: content ?? this.content,
-      moodTag: moodTag ?? this.moodTag,
     );
   }
 
   @override
   String toString() {
-    return 'JournalEntry(key: $key, date: $date, title: $title, content: ${content.length > 50 ? '${content.substring(0, 50)}...' : content}, moodTag: $moodTag)';
+    return 'JournalEntry(key: $key, date: $date, title: $title, content: ${content.length > 50 ? '${content.substring(0, 50)}...' : content})';
   }
 
   @override
@@ -113,8 +85,7 @@ class JournalEntry extends HiveObject {
         other.key == key &&
         other.date == date &&
         other.title == title &&
-        other.content == content &&
-        other.moodTag == moodTag;
+        other.content == content;
   }
 
   @override
@@ -122,7 +93,6 @@ class JournalEntry extends HiveObject {
     return key.hashCode ^
         date.hashCode ^
         title.hashCode ^
-        content.hashCode ^
-        moodTag.hashCode;
+        content.hashCode;
   }
 }

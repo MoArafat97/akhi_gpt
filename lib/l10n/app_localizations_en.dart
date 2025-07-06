@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Companion GPT';
+  String get appTitle => 'NafsAI';
 
   @override
   String get greetingBrother => 'Assalamu alaikum, brother!';
