@@ -33,6 +33,7 @@ import 'pages/settings_page.dart';
 import 'pages/diagnostic_page.dart';
 import 'pages/splash_screen.dart';
 import 'pages/paywall_screen.dart';
+import 'pages/openrouter_setup_page.dart';
 import 'services/settings_service.dart';
 
 /// Generate routes with developer mode protection
@@ -63,6 +64,7 @@ Route<dynamic>? _generateRoute(RouteSettings settings) {
     '/settings': (context) => const SettingsPage(),
     '/paywall': (context) => const PaywallScreen(),
     '/diagnostics': (context) => const DiagnosticPage(),
+    '/openrouter_setup': (context) => const OpenRouterSetupPage(),
   };
 
   final builder = routes[routeName];
