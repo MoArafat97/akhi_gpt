@@ -7,7 +7,8 @@ import '../models/journal_entry.dart';
 import '../models/anonymous_letter.dart';
 import '../services/hive_service.dart';
 import 'new_note_page.dart';
-import 'anonymous_message_page.dart';
+import 'edit_note_page.dart';
+import 'letter_page.dart';
 
 class JournalPage extends StatefulWidget {
   final Color bgColor;
@@ -224,25 +225,38 @@ class _JournalPageState extends State<JournalPage> with SingleTickerProviderStat
             _buildAnonymousLetterTab(),
           ],
         ),
-        floatingActionButton: _tabController.index == 0
-            ? FloatingActionButton(
-                onPressed: () async {
-                  final result = await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const NewNotePage(),
-                    ),
-                  );
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            if (_tabController.index == 0) {
+              // Journal tab - create new journal entry
+              final result = await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const NewNotePage(),
+                ),
+              );
 
-                  // Refresh data if a new entry was added
-                  if (result == true && mounted) {
-                    await _loadEntries();
-                  }
-                },
-                backgroundColor: Colors.white,
-                foregroundColor: widget.bgColor,
-                child: const Icon(Icons.add, size: 28),
-              )
-            : null,
+              // Refresh data if a new entry was added
+              if (result == true && mounted) {
+                await _loadEntries();
+              }
+            } else {
+              // Anonymous Letter tab - create new letter
+              final result = await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => LetterPage(bgColor: widget.bgColor),
+                ),
+              );
+
+              // Reload letters if a message was saved
+              if (result == true && mounted) {
+                await _loadLetters();
+              }
+            }
+          },
+          backgroundColor: Colors.white,
+          foregroundColor: widget.bgColor,
+          child: const Icon(Icons.add, size: 28),
+        ),
       ),
     );
   }
@@ -379,89 +393,7 @@ class _JournalPageState extends State<JournalPage> with SingleTickerProviderStat
               color: Colors.white70,
             ),
           ),
-          const SizedBox(height: 32),
-
-          // Write new message button
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.edit_note,
-                  size: 48,
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Write Anonymous Message',
-                  style: GoogleFonts.lexend(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Express your thoughts privately.\nMessages auto-delete in 24 hours.',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.7),
-                    height: 1.4,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () async {
-                    final result = await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => AnonymousMessagePage(bgColor: widget.bgColor),
-                      ),
-                    );
-
-                    // Reload letters if a message was saved
-                    if (result == true) {
-                      await _loadLetters();
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: widget.bgColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.add,
-                        size: 20,
-                        color: widget.bgColor,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Write Message',
-                        style: GoogleFonts.lexend(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // Active letters section
           Text(
@@ -532,24 +464,38 @@ class _JournalPageState extends State<JournalPage> with SingleTickerProviderStat
   }
 
   Widget _buildEntryCard(JournalEntry entry) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () async {
+        // Navigate to edit page
+        final result = await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => EditNotePage(entry: entry),
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        );
+
+        // Refresh entries if changes were made
+        if (result == true && mounted) {
+          await _loadEntries();
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Row(
               children: [
                 Expanded(
@@ -562,31 +508,7 @@ class _JournalPageState extends State<JournalPage> with SingleTickerProviderStat
                     ),
                   ),
                 ),
-                if (entry.moodTag != null) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: widget.bgColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(entry.moodEmoji, style: const TextStyle(fontSize: 14)),
-                        const SizedBox(width: 4),
-                        Text(
-                          entry.moodTag!,
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: widget.bgColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+
               ],
             ),
             const SizedBox(height: 8),
@@ -634,7 +556,8 @@ class _JournalPageState extends State<JournalPage> with SingleTickerProviderStat
                 ),
               ],
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );

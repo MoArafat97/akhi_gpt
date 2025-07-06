@@ -122,7 +122,7 @@ class _IntroPageElevenState extends State<IntroPageEleven>
         await GenderUtil.setUserGender(UserGender.male);
       }
 
-      // Mark onboarding as complete
+      // Mark onboarding as complete (this also sets hasSeenOnboarding)
       await GenderUtil.setOnboardingComplete();
 
       // Navigate to main app after a brief delay

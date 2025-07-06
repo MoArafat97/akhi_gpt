@@ -1,17 +1,17 @@
-# Companion GPT 🤲
+# NafsAI 🤲
 
 **Your supportive Muslim companion in your pocket**
 
-Companion GPT is a compassionate mental health chat application designed specifically for the Muslim community. Built with Flutter and powered by an enhanced OpenRouter proxy system, it provides a safe, anonymous, and culturally-aware space for emotional support and spiritual guidance.
+NafsAI is a compassionate mental health chat application designed specifically for the Muslim community. Built with Flutter and powered by an enhanced OpenRouter proxy system, it provides a safe, anonymous, and culturally-aware space for emotional support and spiritual guidance.
 
 Choose between a supportive **Akhi** (brother) or **Ukhti** (sister) companion based on your preference, ensuring culturally appropriate and comfortable conversations for all users.
 
 ---
 
-## 🌟 **What Makes Companion GPT Special**
+## 🌟 **What Makes NafsAI Special**
 
 ### **Your Digital Companion**
-Companion GPT isn't just another chatbot—it's your understanding companion who:
+NafsAI isn't just another chatbot—it's your understanding companion who:
 - **Gender-Aware Support**: Choose between Akhi (brother) or Ukhti (sister) for culturally appropriate conversations
 - Speaks your language (both literally and culturally)
 - Understands Islamic values and perspectives

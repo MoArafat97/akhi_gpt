@@ -23,15 +23,16 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     try {
-      // Check if onboarding has been completed (including new pages)
-      final isOnboardingComplete = await GenderUtil.isOnboardingComplete();
+      // Check if user has ever seen onboarding (this ensures onboarding is shown exactly once)
+      final hasSeenOnboarding = await GenderUtil.hasSeenOnboarding();
 
-      if (isOnboardingComplete) {
-        // Onboarding complete, go directly to main app
-        Navigator.pushReplacementNamed(context, '/card_navigation');
-      } else {
-        // Onboarding not complete, start from beginning
+      if (!hasSeenOnboarding) {
+        // User has never seen onboarding, show it and mark as seen
+        await GenderUtil.setHasSeenOnboarding();
         Navigator.pushReplacementNamed(context, '/onboard1');
+      } else {
+        // User has seen onboarding before, go directly to main app
+        Navigator.pushReplacementNamed(context, '/card_navigation');
       }
     } catch (e) {
       // On error, default to onboarding
@@ -83,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen> {
               
               // App title
               Text(
-                'Companion GPT',
+                'NafsAI',
                 style: GoogleFonts.lexend(
                   fontSize: 32,
                   fontWeight: FontWeight.w600,
