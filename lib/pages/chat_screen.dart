@@ -102,21 +102,21 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  void _initializeService() {
+  void _initializeService() async {
+    // Get dynamic model display name
+    final modelDisplayName = await _openRouterService.getModelDisplayName();
     setState(() {
-      _currentModel = _openRouterService.modelDisplayName;
+      _currentModel = modelDisplayName;
     });
 
-    // Debug: Check environment variables directly
-    final apiKey = dotenv.env['OPENROUTER_API_KEY'];
-    print('🔥 CHAT: Direct env check - API Key: ${apiKey != null ? "✅ Found (${apiKey.length} chars)" : "❌ Not found"}');
-    print('🔥 CHAT: All env keys: ${dotenv.env.keys.toList()}');
-    print('🔥 CHAT: Service configured: ${_openRouterService.isConfigured}');
+    // Check service configuration
+    final isConfigured = await _openRouterService.isConfigured;
+    print('🔥 CHAT: Service configured: $isConfigured');
 
-    if (!_openRouterService.isConfigured) {
-      print('🔥 CHAT: ❌ Service not configured during initialization - but this might be a timing issue');
+    if (!isConfigured) {
+      print('🔥 CHAT: ❌ Service not configured - user needs to set API key');
     } else {
-      print('🔥 CHAT: ✅ Service is properly configured during initialization');
+      print('🔥 CHAT: ✅ Service is properly configured');
     }
   }
 
@@ -463,14 +463,40 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
 
-      // The service should have already provided a fallback response through the stream
-      // If we reach here, it means the stream failed completely, so we provide a minimal fallback
+      String errorMessage;
+      bool showSetupButton = false;
+
+      // Check if it's a configuration error
+      if (e.toString().contains('Service not configured') ||
+          e.toString().contains('missing API key')) {
+        errorMessage = 'Please set up your OpenRouter API key in Settings to start chatting. 🔑';
+        showSetupButton = true;
+      } else {
+        errorMessage = 'I\'m having some technical difficulties right now, ${_userGender.casualAddress}. Please try again in a moment. 🤲';
+      }
+
       setState(() {
         _messages.add(ChatMessage(
           role: 'assistant',
-          content: 'I\'m having some technical difficulties right now, ${_userGender.casualAddress}. Please try again in a moment. 🤲',
+          content: errorMessage,
         ));
       });
+
+      // Show setup button if needed
+      if (showSetupButton && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('API key required for chat'),
+            action: SnackBarAction(
+              label: 'Setup',
+              onPressed: () {
+                Navigator.pushNamed(context, '/openrouter_setup');
+              },
+            ),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
 
       // Save the fallback message
       await _saveChatHistoryIfEnabled();
