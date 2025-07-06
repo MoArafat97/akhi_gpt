@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/user_api_key_service.dart';
+import '../utils/error_handler.dart';
 
 class ApiKeySettingsWidget extends StatefulWidget {
   const ApiKeySettingsWidget({super.key});
@@ -67,11 +68,9 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
     }
 
     if (!_userApiKeyService.isValidApiKeyFormat(apiKey)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Invalid API key format. OpenRouter keys start with "sk-or-v1-"'),
-          backgroundColor: Colors.red,
-        ),
+      ErrorHandler.showErrorSnackBar(
+        context,
+        'Invalid API key format. OpenRouter keys start with "sk-or-v1-"',
       );
       return;
     }
@@ -95,14 +94,10 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
             _isValidating = false;
           });
           
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'API key saved and validated successfully! '
-                '${validationResult.availableModels ?? 0} models available.',
-              ),
-              backgroundColor: Colors.green,
-            ),
+          ErrorHandler.showSuccessSnackBar(
+            context,
+            'API key saved and validated successfully! '
+            '${validationResult.availableModels ?? 0} models available.',
           );
         }
       } else {
@@ -111,11 +106,9 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
             _isValidating = false;
           });
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Validation failed: ${validationResult.error}'),
-              backgroundColor: Colors.red,
-            ),
+          ErrorHandler.showErrorSnackBar(
+            context,
+            'Validation failed: ${validationResult.error}',
           );
         }
       }
@@ -125,11 +118,9 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
           _isValidating = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to validate API key: $e'),
-            backgroundColor: Colors.red,
-          ),
+        ErrorHandler.showErrorSnackBar(
+          context,
+          'Failed to validate API key. Please check your internet connection and try again.',
         );
       }
     }
@@ -149,21 +140,17 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
           _isLoading = false;
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('API key cleared'),
-            backgroundColor: Colors.orange,
-          ),
+        ErrorHandler.showWarningSnackBar(
+          context,
+          'API key cleared',
         );
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to clear API key: $e'),
-            backgroundColor: Colors.red,
-          ),
+        ErrorHandler.showErrorSnackBar(
+          context,
+          'Failed to clear API key. Please try again.',
         );
       }
     }

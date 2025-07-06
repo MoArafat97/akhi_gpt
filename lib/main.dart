@@ -64,7 +64,11 @@ Route<dynamic>? _generateRoute(RouteSettings settings) {
     '/settings': (context) => const SettingsPage(),
     '/paywall': (context) => const PaywallScreen(),
     '/diagnostics': (context) => const DiagnosticPage(),
-    '/openrouter_setup': (context) => const OpenRouterSetupPage(),
+    '/openrouter_setup': (context) {
+      final args = settings.arguments as Map<String, dynamic>?;
+      final isInitialSetup = args?['isInitialSetup'] ?? false;
+      return OpenRouterSetupPage(isInitialSetup: isInitialSetup);
+    },
   };
 
   final builder = routes[routeName];

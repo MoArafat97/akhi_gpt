@@ -21,6 +21,7 @@ class _OpenRouterSetupPageState extends State<OpenRouterSetupPage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _hasValidApiKey = false;
+  bool _isCheckingApiKey = true;
 
   @override
   void initState() {
@@ -35,13 +36,29 @@ class _OpenRouterSetupPageState extends State<OpenRouterSetupPage> {
   }
 
   Future<void> _checkApiKeyStatus() async {
-    final status = await UserApiKeyService.instance.getApiKeyStatus();
     setState(() {
-      _hasValidApiKey = status == ApiKeyStatus.valid;
-      if (_hasValidApiKey) {
-        _currentPage = 1; // Skip to model selection if API key is already set
-      }
+      _isCheckingApiKey = true;
     });
+
+    try {
+      final status = await UserApiKeyService.instance.getApiKeyStatus();
+      if (mounted) {
+        setState(() {
+          _hasValidApiKey = status == ApiKeyStatus.valid;
+          if (_hasValidApiKey) {
+            _currentPage = 1; // Skip to model selection if API key is already set
+          }
+          _isCheckingApiKey = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _hasValidApiKey = false;
+          _isCheckingApiKey = false;
+        });
+      }
+    }
   }
 
   void _nextPage() {
@@ -64,7 +81,11 @@ class _OpenRouterSetupPageState extends State<OpenRouterSetupPage> {
 
   void _finishSetup() {
     if (widget.isInitialSetup) {
-      Navigator.of(context).pushReplacementNamed('/');
+      // Coming from onboarding, go to main app
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/card_navigation',
+        (route) => false,
+      );
     } else {
       Navigator.of(context).pop();
     }
@@ -90,7 +111,26 @@ class _OpenRouterSetupPageState extends State<OpenRouterSetupPage> {
                 onPressed: () => Navigator.pop(context),
               ),
       ),
-      body: Column(
+      body: _isCheckingApiKey
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Checking API configuration...',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : Column(
         children: [
           // Progress indicator
           Container(

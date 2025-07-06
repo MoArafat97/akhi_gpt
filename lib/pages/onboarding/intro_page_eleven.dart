@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/gender_util.dart';
+import '../../services/openrouter_service.dart';
+import '../../services/user_api_key_service.dart';
 
 class IntroPageEleven extends StatefulWidget {
   const IntroPageEleven({super.key});
@@ -129,11 +131,8 @@ class _IntroPageElevenState extends State<IntroPageEleven>
       await Future.delayed(const Duration(milliseconds: 300));
 
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/card_navigation',
-          (route) => false,
-        );
+        // Check if API setup is needed
+        await _navigateToNextStep();
       }
     } catch (e) {
       // Handle error gracefully
@@ -145,6 +144,109 @@ class _IntroPageElevenState extends State<IntroPageEleven>
         });
       }
     }
+  }
+
+  /// Navigate to the next step based on API configuration status
+  Future<void> _navigateToNextStep() async {
+    try {
+      // Check if OpenRouter service is configured (either via environment or user API key)
+      final openRouterService = OpenRouterService();
+      final isServiceConfigured = await openRouterService.isConfigured;
+
+      if (isServiceConfigured) {
+        // Service is already configured, go directly to main app
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/card_navigation',
+          (route) => false,
+        );
+      } else {
+        // Service not configured, check if user has their own API key
+        final apiKeyStatus = await UserApiKeyService.instance.getApiKeyStatus();
+
+        if (apiKeyStatus == ApiKeyStatus.notSet) {
+          // Show API setup as optional step
+          _showApiSetupDialog();
+        } else {
+          // User has API key but it might need validation, go to main app
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/card_navigation',
+            (route) => false,
+          );
+        }
+      }
+    } catch (e) {
+      // On error, default to main app
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/card_navigation',
+        (route) => false,
+      );
+    }
+  }
+
+  /// Show optional API setup dialog
+  void _showApiSetupDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF7B4F2F),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'One More Step! 🚀',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: const Text(
+            'To start chatting with your AI companion, you\'ll need to set up your OpenRouter API key. This gives you access to powerful AI models.\n\nYou can do this now or skip and set it up later in Settings.',
+            style: TextStyle(
+              color: Colors.white70,
+              height: 1.4,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Skip setup, go to main app
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/card_navigation',
+                  (route) => false,
+                );
+              },
+              child: const Text(
+                'Skip for Now',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Go to API setup with initial setup flag
+                Navigator.pushReplacementNamed(
+                  context,
+                  '/openrouter_setup',
+                  arguments: {'isInitialSetup': true},
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF7B4F2F),
+              ),
+              child: const Text('Set Up Now'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'dart:developer' as developer;
 
@@ -330,6 +331,120 @@ enum ErrorSeverity {
   low,    // Minor issues, user can continue
   medium, // Noticeable issues, but recoverable
   high,   // Serious issues, may require user action
+}
+
+/// UI-specific error handling methods for consistent user feedback
+extension UIErrorHandler on ErrorHandler {
+  /// Show standardized error SnackBar with optional action
+  static void showErrorSnackBar(
+    BuildContext context,
+    String message, {
+    String? actionLabel,
+    VoidCallback? onAction,
+    Duration duration = const Duration(seconds: 5),
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.inter(color: Colors.white),
+        ),
+        backgroundColor: Colors.red.shade600,
+        duration: duration,
+        action: actionLabel != null && onAction != null
+            ? SnackBarAction(
+                label: actionLabel,
+                textColor: Colors.white,
+                onPressed: onAction,
+              )
+            : null,
+      ),
+    );
+  }
+
+  /// Show standardized success SnackBar
+  static void showSuccessSnackBar(
+    BuildContext context,
+    String message, {
+    Duration duration = const Duration(seconds: 3),
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.inter(color: Colors.white),
+        ),
+        backgroundColor: Colors.green.shade600,
+        duration: duration,
+      ),
+    );
+  }
+
+  /// Show standardized warning SnackBar
+  static void showWarningSnackBar(
+    BuildContext context,
+    String message, {
+    String? actionLabel,
+    VoidCallback? onAction,
+    Duration duration = const Duration(seconds: 4),
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.inter(color: Colors.white),
+        ),
+        backgroundColor: Colors.orange.shade600,
+        duration: duration,
+        action: actionLabel != null && onAction != null
+            ? SnackBarAction(
+                label: actionLabel,
+                textColor: Colors.white,
+                onPressed: onAction,
+              )
+            : null,
+      ),
+    );
+  }
+
+  /// Get standardized error message for API configuration issues
+  static String getApiConfigurationErrorMessage(ErrorAnalysis analysis) {
+    switch (analysis.category) {
+      case ErrorCategory.authentication:
+        return 'Invalid API key. Please check your OpenRouter configuration in Settings.';
+      case ErrorCategory.configuration:
+        return 'API not configured. Please add your OpenRouter API key in Settings to start chatting.';
+      case ErrorCategory.network:
+        return 'Connection issue. Please check your internet connection and try again.';
+      case ErrorCategory.rateLimit:
+        return 'Rate limit reached. Please wait a moment before trying again.';
+      case ErrorCategory.model:
+        return 'AI model temporarily unavailable. Trying alternative model...';
+      default:
+        return 'Service temporarily unavailable. Please try again in a moment.';
+    }
+  }
+
+  /// Show API configuration error with setup action
+  static void showApiConfigurationError(
+    BuildContext context,
+    ErrorAnalysis analysis,
+  ) {
+    final message = getApiConfigurationErrorMessage(analysis);
+
+    if (analysis.requiresConfiguration || analysis.category == ErrorCategory.configuration) {
+      showErrorSnackBar(
+        context,
+        message,
+        actionLabel: 'Setup',
+        onAction: () {
+          Navigator.pushNamed(context, '/openrouter_setup');
+        },
+      );
+    } else {
+      showErrorSnackBar(context, message);
+    }
+  }
 }
 
 /// Subscription-specific error handling methods
