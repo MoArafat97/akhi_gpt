@@ -5,7 +5,8 @@
     <application
         android:label="akhi_gpt"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true">
         <activity
             android:name="com.moarafat.akhi_gpt.MainActivity"
             android:exported="true"
