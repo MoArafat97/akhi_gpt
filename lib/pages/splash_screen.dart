@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../utils/gender_util.dart';
 import '../services/user_api_key_service.dart';
+import '../services/openrouter_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -34,15 +35,24 @@ class _SplashScreenState extends State<SplashScreen> {
         return;
       }
 
-      // Check if user has set up their API key
-      final apiKeyStatus = await UserApiKeyService.instance.getApiKeyStatus();
+      // Check if OpenRouter service is configured (either via environment or user API key)
+      final openRouterService = OpenRouterService();
+      final isServiceConfigured = await openRouterService.isConfigured;
 
-      if (apiKeyStatus == ApiKeyStatus.notSet) {
-        // User needs to set up their API key
-        Navigator.pushReplacementNamed(context, '/openrouter_setup');
-      } else {
-        // User has seen onboarding and has API key, go to main app
+      if (isServiceConfigured) {
+        // Service is configured (via environment or user key), go to main app
         Navigator.pushReplacementNamed(context, '/card_navigation');
+      } else {
+        // Service not configured, check if user has their own API key
+        final apiKeyStatus = await UserApiKeyService.instance.getApiKeyStatus();
+
+        if (apiKeyStatus == ApiKeyStatus.notSet) {
+          // User needs to set up their API key
+          Navigator.pushReplacementNamed(context, '/openrouter_setup');
+        } else {
+          // User has API key, go to main app
+          Navigator.pushReplacementNamed(context, '/card_navigation');
+        }
       }
     } catch (e) {
       // On error, default to onboarding
