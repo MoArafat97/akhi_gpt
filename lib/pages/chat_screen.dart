@@ -8,6 +8,7 @@ import '../services/openrouter_service.dart';
 import '../services/hive_service.dart';
 import '../utils/settings_util.dart';
 import '../utils/gender_util.dart';
+import '../utils/error_handler.dart';
 import '../services/subscription_service.dart';
 import '../services/message_counter_service.dart';
 import 'paywall_screen.dart';
@@ -33,6 +34,10 @@ class _ChatScreenState extends State<ChatScreen> {
   String _currentModel = 'Akhi Assistant';
   String? _sessionId;
   UserGender _userGender = UserGender.male; // Default, will be loaded from preferences
+
+  // Connection status tracking
+  bool _isConnected = false;
+  bool _isCheckingConnection = false;
 
   // Aggression tracking variables
   int _violationCount = 0;
@@ -60,10 +65,23 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// Test OpenRouter connection on startup
   void _testConnection() async {
+    if (mounted) {
+      setState(() {
+        _isCheckingConnection = true;
+      });
+    }
+
     try {
       developer.log('Testing OpenRouter connection...', name: 'ChatScreen');
       final isConnected = await _openRouterService.testConnection();
       developer.log('Connection test result: $isConnected', name: 'ChatScreen');
+
+      if (mounted) {
+        setState(() {
+          _isConnected = isConnected;
+          _isCheckingConnection = false;
+        });
+      }
 
       if (!isConnected) {
         developer.log('❌ OpenRouter connection failed', name: 'ChatScreen');
@@ -72,6 +90,12 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     } catch (e) {
       developer.log('❌ Connection test error: $e', name: 'ChatScreen');
+      if (mounted) {
+        setState(() {
+          _isConnected = false;
+          _isCheckingConnection = false;
+        });
+      }
     }
   }
 
@@ -182,15 +206,9 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {});
 
         // Show lockout message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Chat locked for 10 min.',
-              style: GoogleFonts.inter(color: Colors.white),
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
+        ErrorHandler.showWarningSnackBar(
+          context,
+          'Chat locked for 10 minutes due to inappropriate content. Please use respectful language.',
         );
       }
     } catch (e) {
@@ -315,14 +333,16 @@ class _ChatScreenState extends State<ChatScreen> {
     // Check if service is configured
     if (!(await _openRouterService.isConfigured)) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'App not configured. Please check your API key.',
-              style: GoogleFonts.inter(color: Colors.white),
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
+        ErrorHandler.showApiConfigurationError(
+          context,
+          ErrorAnalysis(
+            category: ErrorCategory.configuration,
+            severity: ErrorSeverity.high,
+            userMessage: 'API not configured',
+            technicalDetails: 'OpenRouter service not configured',
+            shouldRetry: false,
+            shouldFallback: false,
+            requiresConfiguration: true,
           ),
         );
       }
@@ -484,17 +504,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
       // Show setup button if needed
       if (showSetupButton && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('API key required for chat'),
-            action: SnackBarAction(
-              label: 'Setup',
-              onPressed: () {
-                Navigator.pushNamed(context, '/openrouter_setup');
-              },
-            ),
-            duration: const Duration(seconds: 5),
-          ),
+        ErrorHandler.showErrorSnackBar(
+          context,
+          'API key required for chat',
+          actionLabel: 'Setup',
+          onAction: () {
+            Navigator.pushNamed(context, '/openrouter_setup');
+          },
         );
       }
 
@@ -518,6 +534,59 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     });
+  }
+
+  /// Build connection status indicator
+  Widget _buildConnectionStatus() {
+    if (_isCheckingConnection) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                const Color(0xFFFCF8F1).withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'Checking connection...',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              color: const Color(0xFFFCF8F1).withValues(alpha: 0.7),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final statusColor = _isConnected ? Colors.green : Colors.red;
+    final statusIcon = _isConnected ? Icons.wifi : Icons.wifi_off;
+    final statusText = _isConnected ? 'Connected' : 'Offline';
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          statusIcon,
+          size: 12,
+          color: statusColor,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          statusText,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            color: statusColor,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -568,6 +637,9 @@ class _ChatScreenState extends State<ChatScreen> {
                               );
                             },
                           ),
+                          const SizedBox(height: 4),
+                          // Connection status indicator
+                          _buildConnectionStatus(),
                         ],
                       ),
                     ),
