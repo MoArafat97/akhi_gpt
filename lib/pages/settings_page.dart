@@ -110,23 +110,29 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
-          _SectionHeader('Subscription'),
-          const SubscriptionStatusWidget(),
-
-          _OpenRouterSectionHeader(),
+          // Essential Setup Section - Prioritized at top
+          _SectionHeader('Essential Setup'),
+          _OpenRouterConfigurationCard(),
           const ApiKeySettingsWidget(),
           const SizedBox(height: 8),
           const ModelSelectionWidget(),
 
+          // Profile Section
           _SectionHeader('Profile'),
           const PersonalitySettingsWidget(),
 
-          _SectionHeader('Chat'),
+          // Chat Preferences Section
+          _SectionHeader('Chat Preferences'),
           _SwitchTile('Streaming responses', 'streaming', defaultOn: true),
           _SaveChatHistorySwitchTile(),
           _SwitchTile('Encrypt saved chats', 'encryptChats', defaultOn: true),
           _ChatHistoryTile(),
 
+          // Subscription Section - Moved down as it's not essential for basic functionality
+          _SectionHeader('Subscription'),
+          const SubscriptionStatusWidget(),
+
+          // Other Settings
           _SectionHeader('Journal'),
           _DropdownTile('Autosave', 'autosave',
             ['Live', '30 s', 'On save'], defaultVal: 'Live'),
@@ -196,10 +202,10 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _OpenRouterSectionHeader() {
+  Widget _OpenRouterConfigurationCard() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -209,49 +215,65 @@ class _SettingsPageState extends State<SettingsPage> {
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Icon(
-              Icons.settings_input_component,
-              color: Colors.white,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Text(
-            'OpenRouter Configuration',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Text(
-              'AI API',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.settings_input_component,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'OpenRouter Configuration',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'REQUIRED',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Configure your OpenRouter API key and select an AI model to start chatting. This is required for the app to function.',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withValues(alpha: 0.8),
+              height: 1.4,
             ),
           ),
         ],

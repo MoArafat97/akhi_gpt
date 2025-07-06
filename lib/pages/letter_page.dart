@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:developer' as developer;
 import '../services/hive_service.dart';
 import '../models/anonymous_letter.dart';
+import '../utils/error_handler.dart';
 
 class LetterPage extends StatefulWidget {
   final Color bgColor;
@@ -65,12 +66,10 @@ class _LetterPageState extends State<LetterPage> {
 
       if (mounted) {
         // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Letter saved privately'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
+        ErrorHandler.showSuccessSnackBar(
+          context,
+          'Letter saved privately',
+          duration: const Duration(seconds: 2),
         );
 
         // Navigate back with success result
@@ -79,11 +78,9 @@ class _LetterPageState extends State<LetterPage> {
     } catch (e) {
       developer.log('Error saving letter: $e', name: 'LetterPage');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving letter: $e'),
-            backgroundColor: Colors.red,
-          ),
+        ErrorHandler.showErrorSnackBar(
+          context,
+          'Unable to save letter. Please try again.',
         );
       }
     } finally {

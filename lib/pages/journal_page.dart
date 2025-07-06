@@ -6,6 +6,7 @@ import 'dart:ui';
 import '../models/journal_entry.dart';
 import '../models/anonymous_letter.dart';
 import '../services/hive_service.dart';
+import '../utils/error_handler.dart';
 import 'new_note_page.dart';
 import 'edit_note_page.dart';
 import 'letter_page.dart';
@@ -111,11 +112,9 @@ class _JournalPageState extends State<JournalPage> with SingleTickerProviderStat
     } catch (e) {
       developer.log('Error loading letters: $e', name: 'JournalPage');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading letters: $e'),
-            backgroundColor: Colors.red,
-          ),
+        ErrorHandler.showErrorSnackBar(
+          context,
+          'Unable to load journal entries. Please try again.',
         );
       }
     } finally {
@@ -149,21 +148,17 @@ class _JournalPageState extends State<JournalPage> with SingleTickerProviderStat
       await _loadLetters();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Anonymous letter saved! It will auto-delete in 24 hours.'),
-            backgroundColor: Colors.green,
-          ),
+        ErrorHandler.showSuccessSnackBar(
+          context,
+          'Anonymous letter saved! It will auto-delete in 24 hours.',
         );
       }
     } catch (e) {
       developer.log('Error saving letter: $e', name: 'JournalPage');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving letter: $e'),
-            backgroundColor: Colors.red,
-          ),
+        ErrorHandler.showErrorSnackBar(
+          context,
+          'Unable to save letter. Please try again.',
         );
       }
     }
