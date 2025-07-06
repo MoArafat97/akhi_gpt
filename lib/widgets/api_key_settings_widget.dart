@@ -18,7 +18,6 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
   bool _isValidating = false;
   bool _obscureText = true;
   ApiKeyStatus _currentStatus = ApiKeyStatus.notSet;
-  String? _validationError;
   String? _currentApiKey;
 
   @override
@@ -68,15 +67,17 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
     }
 
     if (!_userApiKeyService.isValidApiKeyFormat(apiKey)) {
-      setState(() {
-        _validationError = 'Invalid API key format. OpenRouter keys start with "sk-or-v1-"';
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid API key format. OpenRouter keys start with "sk-or-v1-"'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
     setState(() {
       _isValidating = true;
-      _validationError = null;
     });
 
     try {
@@ -107,17 +108,29 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
       } else {
         if (mounted) {
           setState(() {
-            _validationError = validationResult.error;
             _isValidating = false;
           });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Validation failed: ${validationResult.error}'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _validationError = 'Failed to validate API key: $e';
           _isValidating = false;
         });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to validate API key: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -133,7 +146,6 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
           _currentApiKey = null;
           _currentStatus = ApiKeyStatus.notSet;
           _apiKeyController.clear();
-          _validationError = null;
           _isLoading = false;
         });
         
@@ -164,6 +176,61 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
     }
   }
 
+  Future<void> _testConnection() async {
+    setState(() {
+      _isValidating = true;
+    });
+
+    try {
+      // Test with current API key if available, otherwise test environment configuration
+      String? testKey = _apiKeyController.text.trim();
+      if (testKey.isEmpty) {
+        testKey = null; // This will use environment configuration
+      }
+
+      final validationResult = await _userApiKeyService.validateApiKey(testKey);
+
+      if (mounted) {
+        setState(() {
+          _isValidating = false;
+        });
+
+        if (validationResult.isValid) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Connection successful! ${validationResult.availableModels ?? 0} models available.',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Connection failed: ${validationResult.error}',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isValidating = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Test failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildStatusIndicator() {
     IconData icon;
     Color color;
@@ -172,7 +239,7 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
     switch (_currentStatus) {
       case ApiKeyStatus.notSet:
         icon = Icons.key_off;
-        color = Colors.grey;
+        color = Colors.red; // Changed to red for better visibility
         text = 'No API key set';
         break;
       case ApiKeyStatus.needsValidation:
@@ -187,19 +254,28 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
         break;
     }
 
-    return Row(
-      children: [
-        Icon(icon, color: color, size: 16),
-        const SizedBox(width: 8),
-        Text(
-          text,
-          style: TextStyle(
-            color: color,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              color: color,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -217,24 +293,45 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
     }
 
     return Card(
+      elevation: 4,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: Colors.black.withValues(alpha: 0.3), // Dark background for white text
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: _currentStatus == ApiKeyStatus.valid
+              ? Colors.green.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.3),
+          width: 2, // Thicker border for better visibility
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.vpn_key, color: Colors.white),
-                const SizedBox(width: 8),
-                const Text(
-                  'OpenRouter API Key',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.vpn_key, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'OpenRouter API Key',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 _buildStatusIndicator(),
               ],
             ),
@@ -279,32 +376,18 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
                         icon: const Icon(Icons.clear, color: Colors.white54),
                         onPressed: () {
                           _apiKeyController.clear();
-                          setState(() {
-                            _validationError = null;
-                          });
+                          setState(() {});
                         },
                       ),
                   ],
                 ),
               ),
               onChanged: (value) {
-                setState(() {
-                  _validationError = null;
-                });
+                // Update UI when text changes
+                setState(() {});
               },
             ),
-            
-            if (_validationError != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                _validationError!,
-                style: const TextStyle(
-                  color: Colors.red,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-            
+
             const SizedBox(height: 16),
             
             // Action Buttons
@@ -328,6 +411,15 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
                           )
                         : const Text('Save & Validate'),
                   ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: _isValidating ? null : _testConnection,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Test'),
                 ),
                 const SizedBox(width: 12),
                 if (_currentApiKey != null)

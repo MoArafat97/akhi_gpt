@@ -113,7 +113,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _SectionHeader('Subscription'),
           const SubscriptionStatusWidget(),
 
-          _SectionHeader('OpenRouter Configuration'),
+          _OpenRouterSectionHeader(),
           const ApiKeySettingsWidget(),
           const SizedBox(height: 8),
           const ModelSelectionWidget(),
@@ -130,11 +130,6 @@ class _SettingsPageState extends State<SettingsPage> {
           _SectionHeader('Journal'),
           _DropdownTile('Autosave', 'autosave',
             ['Live', '30 s', 'On save'], defaultVal: 'Live'),
-
-          _SectionHeader('Mood & Duʿāʾ'),
-          _DropdownTile('Mood picker style', 'moodStyle',
-            ['Emoji', 'Text', 'Both'], defaultVal: 'Emoji'),
-          _SliderTile('Duʿāʾ suggestions /day', 'duaFreq', 0, 10, defaultVal: 3),
 
           _SectionHeader('Safety'),
           _SwitchTile('Show crisis info cards', 'crisis', defaultOn: true),
@@ -197,6 +192,69 @@ class _SettingsPageState extends State<SettingsPage> {
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
+      ),
+    );
+  }
+
+  Widget _OpenRouterSectionHeader() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.blue.withValues(alpha: 0.2),
+            Colors.purple.withValues(alpha: 0.2),
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Icon(
+              Icons.settings_input_component,
+              color: Colors.white,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Text(
+            'OpenRouter Configuration',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text(
+              'AI API',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
