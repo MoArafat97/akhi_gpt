@@ -6,6 +6,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/chat_message.dart';
 import '../utils/gender_util.dart';
+import 'user_api_key_service.dart';
+import 'model_management_service.dart';
 import '../config/personality_config.dart';
 
 class OpenRouterService {
@@ -153,11 +155,30 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
             ))
           : null;
 
-  /// Get the API key from environment variables (fallback to hardcoded for testing)
-  String? get _apiKey => dotenv.env['OPENROUTER_API_KEY'];
+  /// Get the API key from user storage (fallback to environment for backward compatibility)
+  Future<String?> get _apiKey async {
+    // Try user's API key first
+    final userApiKey = await UserApiKeyService.instance.getApiKey();
+    if (userApiKey != null && userApiKey.isNotEmpty) {
+      return userApiKey;
+    }
+
+    // Fallback to environment variable for backward compatibility
+    return dotenv.env['OPENROUTER_API_KEY'];
+  }
 
   /// Get the current active model (with fallback support)
   Future<String> get _currentModel async {
+    // Try to get user's selected model first
+    try {
+      final selectedModel = await ModelManagementService.instance.getSelectedModel();
+      if (selectedModel.isNotEmpty) {
+        return selectedModel;
+      }
+    } catch (e) {
+      developer.log('Failed to get user selected model: $e', name: 'OpenRouterService');
+    }
+
     // Try to get the last working model from storage
     final lastWorkingModel = await _secureStorage.read(key: _lastWorkingModelKey);
 
@@ -180,9 +201,15 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
   String get modelDisplayName => _fixedModelDisplayName;
 
   /// Check if service is properly configured
-  bool get isConfigured {
-    final apiKey = _apiKey;
-    return apiKey != null && apiKey.isNotEmpty && _fallbackModels.isNotEmpty;
+  Future<bool> get isConfigured async {
+    final apiKey = await _apiKey;
+    return apiKey != null && apiKey.isNotEmpty;
+  }
+
+  /// Legacy sync version for backward compatibility
+  bool get isConfiguredSync {
+    final envApiKey = dotenv.env['OPENROUTER_API_KEY'];
+    return envApiKey != null && envApiKey.isNotEmpty && _fallbackModels.isNotEmpty;
   }
 
   /// Check if an error indicates rate limiting or model unavailability
@@ -259,11 +286,12 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
 
       // Test direct API connection
       final model = await _currentModel;
+      final apiKey = await _apiKey;
       final response = await _dio.post(
         '/chat/completions',
         options: Options(
           headers: {
-            'Authorization': 'Bearer $_apiKey',
+            'Authorization': 'Bearer $apiKey',
           },
         ),
         data: {
@@ -312,7 +340,7 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
 
   /// Stream chat responses from OpenRouter API with fallback support
   Stream<String> chatStream(String message, List<ChatMessage> history, {UserGender? gender}) async* {
-    if (!isConfigured) {
+    if (!(await isConfigured)) {
       throw Exception('Service not configured - missing API key or model');
     }
 
@@ -448,11 +476,12 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
     try {
       developer.log('Sending request to OpenRouter with model: $model, ${messages.length} messages', name: 'OpenRouterService');
 
+      final apiKey = await _apiKey;
       final response = await _dio.post(
         '/chat/completions',
         options: Options(
           headers: {
-            'Authorization': 'Bearer $_apiKey',
+            'Authorization': 'Bearer $apiKey',
             'Accept': 'text/event-stream',
           },
           responseType: ResponseType.stream,

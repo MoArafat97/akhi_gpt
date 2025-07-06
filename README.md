@@ -223,13 +223,39 @@ cd akhi-gpt
 # Install Flutter dependencies
 flutter pub get
 
-# Configure environment
-cp .env.example .env
-# Edit .env with your OpenRouter API key
-
 # Run the app
 flutter run
 ```
+
+**Note**: Starting with version 2.0, users manage their own OpenRouter API keys directly in the app. No environment configuration is required for developers.
+
+## 🔑 **User API Key Management**
+
+### **Why User-Managed API Keys?**
+- **Full Control**: Users control their own AI conversations and costs
+- **Privacy**: Direct communication with OpenRouter, no intermediary servers
+- **Choice**: Access to 400+ AI models from various providers
+- **Transparency**: Clear pricing and usage information
+- **Sustainability**: No subscription fees or usage limits
+
+### **How It Works**
+1. **First Launch**: Users are guided through a simple setup process
+2. **API Key Setup**: Users enter their own OpenRouter API key
+3. **Model Selection**: Choose from hundreds of available AI models
+4. **Start Chatting**: Full control over conversations and costs
+
+### **Getting Your API Key**
+1. Visit [OpenRouter.ai](https://openrouter.ai)
+2. Create a free account
+3. Go to Settings → API Keys
+4. Create a new API key
+5. Enter it in the Akhi GPT app
+
+### **Supported Models**
+- **Free Models**: Many models available at no cost
+- **Premium Models**: Advanced models with competitive pricing
+- **Specialized Models**: Models optimized for specific tasks
+- **Latest Models**: Access to newest AI developments
 
 ---
 
