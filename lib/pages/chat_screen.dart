@@ -313,7 +313,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.isEmpty || _isLoading) return;
 
     // Check if service is configured
-    if (!_openRouterService.isConfigured) {
+    if (!(await _openRouterService.isConfigured)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

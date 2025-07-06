@@ -33,29 +33,29 @@ PROXY_ENDPOINT=http://localhost:8080
     });
 
     group('Configuration Tests', () {
-      test('should be configured with valid API key and models', () {
-        expect(service.isConfigured, isTrue);
+      test('should be configured with valid API key and models', () async {
+        expect(await service.isConfigured, isTrue);
         expect(service.fallbackModels, isNotEmpty);
         expect(service.fallbackModels.length, equals(2));
       });
 
-      test('should not be configured without API key', () {
+      test('should not be configured without API key', () async {
         dotenv.testLoad(fileInput: '''
 DEFAULT_MODEL=qwen/qwen3-32b:free
 FALLBACK_MODELS=qwen/qwq-32b:free,qwen/qwen3-235b-a22b:free
 ''');
-        
+
         final testService = OpenRouterService();
-        expect(testService.isConfigured, isFalse);
+        expect(await testService.isConfigured, isFalse);
       });
 
-      test('should not be configured without models', () {
+      test('should not be configured without models', () async {
         dotenv.testLoad(fileInput: '''
 OPENROUTER_API_KEY=sk-or-v1-test-key-12345
 ''');
-        
+
         final testService = OpenRouterService();
-        expect(testService.isConfigured, isFalse);
+        expect(await testService.isConfigured, isFalse);
       });
 
       test('should parse fallback models correctly', () {

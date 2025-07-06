@@ -6,18 +6,19 @@ class ConfigHelper {
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   /// Check if the service is properly configured
-  static bool isConfigured() {
-    return _service.isConfigured;
+  static Future<bool> isConfigured() async {
+    return await _service.isConfigured;
   }
 
   /// Get current configuration status with fallback model info
   static Future<Map<String, dynamic>> getStatus() async {
     final lastWorkingModel = await _secureStorage.read(key: 'last_working_model');
+    final isConfigured = await _service.isConfigured;
 
     return {
-      'isConfigured': _service.isConfigured,
+      'isConfigured': isConfigured,
       'currentModel': _service.modelDisplayName,
-      'hasApiKey': _service.isConfigured,
+      'hasApiKey': isConfigured,
       'lastWorkingModel': lastWorkingModel,
       'hasFallbackSupport': true,
     };
@@ -26,9 +27,9 @@ class ConfigHelper {
   /// Get current configuration status (synchronous version for backward compatibility)
   static Map<String, dynamic> getStatusSync() {
     return {
-      'isConfigured': _service.isConfigured,
+      'isConfigured': _service.isConfiguredSync,
       'currentModel': _service.modelDisplayName,
-      'hasApiKey': _service.isConfigured,
+      'hasApiKey': _service.isConfiguredSync,
       'hasFallbackSupport': true,
     };
   }
