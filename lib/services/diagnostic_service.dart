@@ -4,6 +4,7 @@ import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'user_api_key_service.dart';
 
 /// Comprehensive diagnostic service for OpenRouter API connectivity and configuration
 class DiagnosticService {
@@ -126,13 +127,13 @@ class DiagnosticService {
 
   /// Validate API key with OpenRouter
   Future<ApiKeyValidation> _validateApiKey() async {
-    developer.log('🔍 Validating API key...', name: 'DiagnosticService');
-    
+    developer.log('🔍 Validating user API key...', name: 'DiagnosticService');
+
     final validation = ApiKeyValidation();
-    final apiKey = dotenv.env['OPENROUTER_API_KEY'];
-    
+    final apiKey = await UserApiKeyService.instance.getApiKey();
+
     if (apiKey == null || apiKey.isEmpty) {
-      validation.error = 'API key not found in environment';
+      validation.error = 'No user API key configured';
       return validation;
     }
     
