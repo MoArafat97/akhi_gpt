@@ -29,7 +29,7 @@ enum SubscriptionTier {
       case SubscriptionTier.free:
         return 75;
       case SubscriptionTier.premium:
-        return 500;
+        return 1500;
     }
   }
 

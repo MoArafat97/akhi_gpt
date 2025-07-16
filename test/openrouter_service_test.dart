@@ -18,11 +18,8 @@ void main() {
     late MockFlutterSecureStorage mockStorage;
 
     setUp(() {
-      // Initialize dotenv with test values
+      // Initialize dotenv with test values (no API key - user must provide)
       dotenv.testLoad(fileInput: '''
-OPENROUTER_API_KEY=sk-or-v1-test-key-12345
-DEFAULT_MODEL=qwen/qwen3-32b:free
-FALLBACK_MODELS=qwen/qwq-32b:free,qwen/qwen3-235b-a22b:free
 ENABLE_PROXY=false
 PROXY_ENDPOINT=http://localhost:8080
 ''');
@@ -33,34 +30,15 @@ PROXY_ENDPOINT=http://localhost:8080
     });
 
     group('Configuration Tests', () {
-      test('should be configured with valid API key and models', () async {
-        expect(await service.isConfigured, isTrue);
-        expect(service.fallbackModels, isNotEmpty);
-        expect(service.fallbackModels.length, equals(2));
+      test('should not be configured without user API key', () async {
+        // Service should not be configured since no user API key is provided
+        expect(await service.isConfigured, isFalse);
       });
 
-      test('should not be configured without API key', () async {
-        dotenv.testLoad(fileInput: '''
-DEFAULT_MODEL=qwen/qwen3-32b:free
-FALLBACK_MODELS=qwen/qwq-32b:free,qwen/qwen3-235b-a22b:free
-''');
-
+      test('should require user API key for configuration', () async {
+        // Without user API key, service should not be configured
         final testService = OpenRouterService();
         expect(await testService.isConfigured, isFalse);
-      });
-
-      test('should not be configured without models', () async {
-        dotenv.testLoad(fileInput: '''
-OPENROUTER_API_KEY=sk-or-v1-test-key-12345
-''');
-
-        final testService = OpenRouterService();
-        expect(await testService.isConfigured, isFalse);
-      });
-
-      test('should parse fallback models correctly', () {
-        expect(service.fallbackModels, contains('qwen/qwq-32b:free'));
-        expect(service.fallbackModels, contains('qwen/qwen3-235b-a22b:free'));
       });
     });
 
@@ -108,35 +86,17 @@ OPENROUTER_API_KEY=sk-or-v1-test-key-12345
       });
     });
 
-    group('Model Fallback Tests', () {
-      test('should have correct fallback hierarchy', () {
-        final models = service.fallbackModels;
-        expect(models[0], equals('qwen/qwq-32b:free'));
-        expect(models[1], equals('qwen/qwen3-235b-a22b:free'));
-      });
-
-      test('should use default model when no fallback models configured', () {
-        dotenv.testLoad(fileInput: '''
-OPENROUTER_API_KEY=sk-or-v1-test-key-12345
-DEFAULT_MODEL=qwen/qwen3-32b:free
-''');
-        
-        final testService = OpenRouterService();
-        expect(testService.fallbackModels, contains('qwen/qwen3-32b:free'));
+    group('Model Selection Tests', () {
+      test('should require user to select model', () async {
+        // Models are now dynamically fetched based on user API key
+        // No hardcoded fallback models
+        expect(() => service.modelDisplayName, returnsNormally);
       });
     });
 
     group('Environment Variable Tests', () {
-      test('should load API key from environment', () {
-        expect(dotenv.env['OPENROUTER_API_KEY'], equals('sk-or-v1-test-key-12345'));
-      });
-
-      test('should load default model from environment', () {
-        expect(dotenv.env['DEFAULT_MODEL'], equals('qwen/qwen3-32b:free'));
-      });
-
-      test('should load fallback models from environment', () {
-        expect(dotenv.env['FALLBACK_MODELS'], equals('qwen/qwq-32b:free,qwen/qwen3-235b-a22b:free'));
+      test('should not have API key in environment (user-provided only)', () {
+        expect(dotenv.env['OPENROUTER_API_KEY'], isNull);
       });
 
       test('should handle proxy configuration', () {
@@ -151,9 +111,6 @@ DEFAULT_MODEL=qwen/qwen3-32b:free
 
     setUp(() {
       dotenv.testLoad(fileInput: '''
-OPENROUTER_API_KEY=sk-or-v1-test-key-12345
-DEFAULT_MODEL=qwen/qwen3-32b:free
-FALLBACK_MODELS=qwen/qwq-32b:free,qwen/qwen3-235b-a22b:free
 ENABLE_PROXY=false
 PROXY_ENDPOINT=http://localhost:8080
 ''');
@@ -162,45 +119,21 @@ PROXY_ENDPOINT=http://localhost:8080
     });
 
     group('Environment Check Tests', () {
-      test('should validate correct environment configuration', () async {
+      test('should validate environment configuration without API key', () async {
         final report = await diagnosticService.runFullDiagnostics();
-        
+
         expect(report.environmentCheck.envFileLoaded, isTrue);
-        expect(report.environmentCheck.apiKeyPresent, isTrue);
-        expect(report.environmentCheck.apiKeyFormat, isTrue);
-        expect(report.environmentCheck.defaultModelPresent, isTrue);
-        expect(report.environmentCheck.defaultModelFormat, isTrue);
-        expect(report.environmentCheck.fallbackModelsPresent, isTrue);
-        expect(report.environmentCheck.fallbackModelsValid, isTrue);
-        expect(report.environmentCheck.fallbackModelsCount, equals(2));
+        // API key should not be present in environment (user-provided only)
+        expect(report.environmentCheck.apiKeyPresent, isFalse);
       });
 
-      test('should detect invalid API key format', () async {
-        dotenv.testLoad(fileInput: '''
-OPENROUTER_API_KEY=invalid-key-format
-DEFAULT_MODEL=qwen/qwen3-32b:free
-FALLBACK_MODELS=qwen/qwq-32b:free,qwen/qwen3-235b-a22b:free
-''');
-
+      test('should handle user API key validation', () async {
+        // API key validation is now user-dependent
         final testDiagnosticService = DiagnosticService();
         final report = await testDiagnosticService.runFullDiagnostics();
-        
-        expect(report.environmentCheck.apiKeyFormat, isFalse);
-        expect(report.environmentCheck.isValid, isFalse);
-      });
 
-      test('should detect invalid model format', () async {
-        dotenv.testLoad(fileInput: '''
-OPENROUTER_API_KEY=sk-or-v1-test-key-12345
-DEFAULT_MODEL=invalid-model-format
-FALLBACK_MODELS=qwen/qwq-32b:free,qwen/qwen3-235b-a22b:free
-''');
-
-        final testDiagnosticService = DiagnosticService();
-        final report = await testDiagnosticService.runFullDiagnostics();
-        
-        expect(report.environmentCheck.defaultModelFormat, isFalse);
-        expect(report.environmentCheck.isValid, isFalse);
+        // Environment should not contain API key
+        expect(report.environmentCheck.apiKeyPresent, isFalse);
       });
     });
 

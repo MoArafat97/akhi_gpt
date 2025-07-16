@@ -14,6 +14,19 @@ import '../services/message_counter_service.dart';
 import 'paywall_screen.dart';
 // import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+/// Analysis result for message content and emotional context
+class MessageAnalysis {
+  final bool isHarmful;
+  final bool isDistressed;
+  final bool needsSupport;
+
+  MessageAnalysis({
+    required this.isHarmful,
+    required this.isDistressed,
+    required this.needsSupport,
+  });
+}
+
 class ChatScreen extends StatefulWidget {
   final Color bgColor;
 
@@ -216,35 +229,83 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  // Cache compiled regex patterns for better performance
-  static final List<RegExp> _offensivePatterns = [
-    // Profanity and insults (most common, check first)
-    RegExp(r'\b(fuck|shit|damn|bitch|asshole|bastard|cunt|piss)\b', caseSensitive: false),
-    RegExp(r'\b(stupid|idiot|moron|dumb)\b', caseSensitive: false),
+  // Patterns for genuinely harmful content (threats, harassment, etc.)
+  static final List<RegExp> _harmfulPatterns = [
+    // Direct threats and violence
+    RegExp(r'\b(gonna|going to|will|want to).*(kill|hurt|destroy|beat|harm).*(you|myself|someone)\b', caseSensitive: false),
+    RegExp(r'\b(kill yourself|kys|end your life)\b', caseSensitive: false),
 
-    // Aggressive language
-    RegExp(r'\b(hate|kill|die|murder|destroy)\b', caseSensitive: false),
-    RegExp(r'\b(shut up|fuck off|go to hell)\b', caseSensitive: false),
+    // Targeted harassment and personal attacks
+    RegExp(r'\byou.*(useless|worthless|pathetic|should die)\b', caseSensitive: false),
+    RegExp(r'\b(shut up|fuck off).*(forever|and die|you piece of)\b', caseSensitive: false),
 
-    // Religious disrespect (more specific to avoid false positives)
-    RegExp(r'\b(allah|islam|muslim).*(fake|stupid|wrong|bad)\b', caseSensitive: false),
-    RegExp(r'\breligion.*(bullshit|stupid|fake)\b', caseSensitive: false),
-
-    // Threats and hostility (simplified patterns)
-    RegExp(r'\b(gonna|going to).*(kill|hurt|destroy|beat)\b', caseSensitive: false),
-    RegExp(r'\byou.*(useless|worthless|pathetic)\b', caseSensitive: false),
+    // Religious/cultural hatred (specific targeting)
+    RegExp(r'\b(allah|islam|muslim|religion).*(should die|is evil|deserves to burn)\b', caseSensitive: false),
+    RegExp(r'\b(all|every).*(muslims|christians|jews).*(should die|are evil)\b', caseSensitive: false),
   ];
 
-  /// Detect if message contains offensive content (optimized for performance)
-  bool _isOffensiveContent(String message) {
-    // Quick length check - very short messages are unlikely to be offensive
-    if (message.length < 3) return false;
+  // Patterns for emotional distress indicators (these should trigger supportive responses)
+  static final List<RegExp> _distressPatterns = [
+    // Expressions of feeling overwhelmed or mistreated
+    RegExp(r'\b(world|life|everything).*(treating me|feels like).*(shit|crap|hell)\b', caseSensitive: false),
+    RegExp(r'\b(feel|feeling).*(like shit|terrible|awful|hopeless)\b', caseSensitive: false),
+    RegExp(r'\b(everything|life).*(sucks|is shit|is fucked)\b', caseSensitive: false),
+
+    // Frustration with situations
+    RegExp(r'\b(this|that).*(is bullshit|is shit|fucking sucks)\b', caseSensitive: false),
+    RegExp(r'\b(so|really|fucking).*(frustrated|angry|pissed off)\b', caseSensitive: false),
+
+    // Casual profanity in context of seeking help
+    RegExp(r'\b(what the (fuck|hell)|wtf).*(is wrong|should i do|can i do)\b', caseSensitive: false),
+  ];
+
+  /// Analyze message content for emotional context and harmful intent
+  MessageAnalysis _analyzeMessage(String message) {
+    if (message.length < 3) {
+      return MessageAnalysis(isHarmful: false, isDistressed: false, needsSupport: false);
+    }
 
     final lowerMessage = message.toLowerCase();
 
-    // Use pre-compiled regex patterns for better performance
-    for (final pattern in _offensivePatterns) {
+    // Check for genuinely harmful content first
+    bool isHarmful = false;
+    for (final pattern in _harmfulPatterns) {
       if (pattern.hasMatch(lowerMessage)) {
+        isHarmful = true;
+        break;
+      }
+    }
+
+    // Check for emotional distress indicators
+    bool isDistressed = false;
+    for (final pattern in _distressPatterns) {
+      if (pattern.hasMatch(lowerMessage)) {
+        isDistressed = true;
+        break;
+      }
+    }
+
+    // Check for help-seeking context (questions, requests for advice)
+    bool needsSupport = _isSeekingHelp(lowerMessage) || isDistressed;
+
+    return MessageAnalysis(
+      isHarmful: isHarmful,
+      isDistressed: isDistressed,
+      needsSupport: needsSupport,
+    );
+  }
+
+  /// Check if message indicates user is seeking help or support
+  bool _isSeekingHelp(String message) {
+    final helpPatterns = [
+      RegExp(r'\b(what should i|what can i|how do i|help me|need advice)\b', caseSensitive: false),
+      RegExp(r"\b(i don't know|not sure|confused|lost|stuck)\b", caseSensitive: false),
+      RegExp(r'\b(feeling|feel).*(lost|confused|overwhelmed|stuck)\b', caseSensitive: false),
+      RegExp(r'\?(.*)(do|help|advice|think|suggest)\b', caseSensitive: false),
+    ];
+
+    for (final pattern in helpPatterns) {
+      if (pattern.hasMatch(message)) {
         return true;
       }
     }
@@ -252,27 +313,40 @@ class _ChatScreenState extends State<ChatScreen> {
     return false;
   }
 
-  /// Handle violation and return appropriate warning message
-  Future<String?> _handleViolation() async {
+  /// Handle harmful content and return appropriate response
+  Future<String?> _handleHarmfulContent() async {
     try {
       _violationCount++;
       await setString('violationCount', _violationCount.toString());
 
       switch (_violationCount) {
         case 1:
-          return "Let's keep things respectful, bro. 🤝";
+          return "I understand you might be frustrated, but I can't engage with threats or harmful language. I'm here to support you in a positive way. 🤝";
         case 2:
-          return "Bro, I'm here to help, but we have to stay civil.";
+          return "I really want to help you, but I need us to keep our conversation supportive and safe. Can we talk about what's really bothering you?";
         case 3:
-          return "Final reminder: no offensive language, or I'll pause our chat.";
+          return "I care about your wellbeing, but I have to pause our chat if harmful language continues. Let's try again in a bit when we can focus on helping you.";
         default:
           // Apply lockout after 3rd violation
           await _applyLockout();
-          return "Chat paused for 10 minutes due to repeated offensive language. Let's try again later.";
+          return "Chat paused for 10 minutes. I'm here when you're ready to talk in a way that's helpful for both of us.";
       }
     } catch (e) {
-      developer.log('Error handling violation: $e', name: 'ChatScreen');
-      return "Let's keep things respectful, bro. 🤝"; // Fallback to first warning
+      developer.log('Error handling harmful content: $e', name: 'ChatScreen');
+      return "I understand you might be frustrated, but I can't engage with threats or harmful language. I'm here to support you in a positive way. 🤝";
+    }
+  }
+
+  /// Generate supportive response for distressed users
+  Future<String> _generateSupportiveResponse(String message) async {
+    final gender = await GenderUtil.getUserGender();
+    final companionName = await GenderUtil.getCompanionName();
+
+    // Get personality-appropriate supportive language
+    if (gender == UserGender.male) {
+      return "I hear you, bro. Sounds like you're going through some tough stuff right now. That really sucks when life feels like it's working against you. Want to talk about what's been weighing on you? I'm here to listen and help however I can. 💪";
+    } else {
+      return "I hear you, sis. It sounds like you're dealing with some really difficult things right now. It's completely understandable to feel frustrated when everything seems to be going wrong. I'm here for you - want to share what's been on your mind? 💕";
     }
   }
 
@@ -393,12 +467,14 @@ class _ChatScreenState extends State<ChatScreen> {
     // Increment message count (this will succeed since we checked canSend above)
     await MessageCounterService.instance.incrementMessageCount();
 
-    // Check for offensive content
-    if (_isOffensiveContent(text)) {
-      final warningMessage = await _handleViolation();
+    // Analyze message for emotional context and harmful content
+    final analysis = _analyzeMessage(text);
+
+    // Handle genuinely harmful content
+    if (analysis.isHarmful) {
+      final warningMessage = await _handleHarmfulContent();
 
       if (warningMessage != null) {
-        // Add both user message and warning in single setState for better performance
         final userMessage = ChatMessage(role: 'user', content: text);
         final warningChatMessage = ChatMessage(
           role: 'assistant',
@@ -412,11 +488,29 @@ class _ChatScreenState extends State<ChatScreen> {
 
         _messageController.clear();
         _scrollToBottom();
-
-        // Save chat history if enabled
         await _saveChatHistoryIfEnabled();
         return;
       }
+    }
+
+    // Handle distressed users with immediate supportive response
+    if (analysis.isDistressed && !analysis.isHarmful) {
+      final userMessage = ChatMessage(role: 'user', content: text);
+      final supportiveResponse = await _generateSupportiveResponse(text);
+      final supportMessage = ChatMessage(
+        role: 'assistant',
+        content: supportiveResponse,
+      );
+
+      setState(() {
+        _messages.add(userMessage);
+        _messages.add(supportMessage);
+      });
+
+      _messageController.clear();
+      _scrollToBottom();
+      await _saveChatHistoryIfEnabled();
+      return;
     }
 
     // Add user message

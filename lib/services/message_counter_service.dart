@@ -208,8 +208,13 @@ class MessageCounterService {
   /// Check if user should see upgrade prompt
   bool shouldShowUpgradePrompt() {
     // Show upgrade prompt when user reaches 90% of free tier limit
-    return SubscriptionService.instance.currentTier == SubscriptionTier.free && 
+    return SubscriptionService.instance.currentTier == SubscriptionTier.free &&
            usagePercentage >= 0.9;
+  }
+
+  /// Reset counter for testing purposes
+  Future<void> resetForTesting() async {
+    await _resetDailyCounter();
   }
 }
 

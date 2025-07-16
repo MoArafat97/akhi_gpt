@@ -1,5 +1,7 @@
+import 'dart:developer' as developer;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/openrouter_service.dart';
+import '../services/model_management_service.dart';
 
 class ConfigHelper {
   static final OpenRouterService _service = OpenRouterService();
@@ -49,9 +51,15 @@ class ConfigHelper {
     await _secureStorage.delete(key: 'model_failure_count');
   }
 
-  /// Get the list of available fallback models from environment
-  static List<String> getFallbackModels() {
-    return _service.fallbackModels;
+  /// Get the list of available models (now user-dependent)
+  static Future<List<String>> getAvailableModels() async {
+    try {
+      final models = await ModelManagementService.instance.fetchAvailableModels();
+      return models.map((model) => model.id).toList();
+    } catch (e) {
+      developer.log('Failed to get available models: $e', name: 'ConfigHelper');
+      return [];
+    }
   }
 }
 

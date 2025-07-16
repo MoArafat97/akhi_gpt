@@ -76,18 +76,18 @@ class _SubscriptionStatusWidgetState extends State<SubscriptionStatusWidget> {
                 Text(
                   '${tier.displayName} Plan',
                   style: GoogleFonts.inter(
-                    color: Colors.white,
+                    color: const Color(0xFF424242),
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  isPremium 
+                  isPremium
                       ? 'Enjoy unlimited messages and all personality styles'
                       : 'Limited to ${tier.dailyMessageLimit} messages per day',
                   style: GoogleFonts.inter(
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: const Color(0xFF666666),
                     fontSize: 14,
                   ),
                 ),
@@ -142,7 +142,7 @@ class _SubscriptionStatusWidgetState extends State<SubscriptionStatusWidget> {
               Text(
                 'Daily Messages',
                 style: GoogleFonts.inter(
-                  color: Colors.white,
+                  color: const Color(0xFF424242),
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -150,7 +150,7 @@ class _SubscriptionStatusWidgetState extends State<SubscriptionStatusWidget> {
               Text(
                 '${stats['currentCount']}/${stats['dailyLimit']}',
                 style: GoogleFonts.inter(
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: const Color(0xFF666666),
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -194,7 +194,7 @@ class _SubscriptionStatusWidgetState extends State<SubscriptionStatusWidget> {
           Text(
             'Resets in ${stats['timeUntilReset']}',
             style: GoogleFonts.inter(
-              color: Colors.white.withValues(alpha: 0.6),
+              color: const Color(0xFF666666),
               fontSize: 12,
             ),
           ),

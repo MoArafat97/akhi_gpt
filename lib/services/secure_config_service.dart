@@ -146,12 +146,9 @@ class SecureConfigService {
   /// Validate all configuration on app startup
   Map<String, bool> validateConfiguration() {
     final results = <String, bool>{};
-    
-    // Check OpenRouter configuration
-    final openRouterKey = dotenv.env['OPENROUTER_API_KEY'];
-    results['openrouter_configured'] = openRouterKey != null && 
-        openRouterKey.isNotEmpty && 
-        !_isPlaceholderKey(openRouterKey);
+
+    // OpenRouter configuration is now user-dependent, cannot validate synchronously
+    results['openrouter_configured'] = false; // Will be checked async when user provides API key
     
     // Check RevenueCat configuration
     final androidKey = dotenv.env['REVENUECAT_API_KEY_ANDROID'];
