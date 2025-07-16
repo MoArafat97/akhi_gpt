@@ -20,15 +20,8 @@ class OpenRouterService {
   // Fixed model - loaded from environment
   static const String _fixedModelDisplayName = 'Companion Assistant';
 
-  // Model fallback hierarchy
-  static const List<String> _fallbackModels = [
-    'deepseek/deepseek-r1-0528-qwen3-8b:free',  // Primary
-    'qwen/qwen-2.5-72b-instruct:free',          // Fallback 1
-    'qwen/qwen-2.5-32b-instruct:free',          // Fallback 2
-  ];
-
-  // Public getter for fallback models
-  static List<String> get fallbackModels => _fallbackModels;
+  // Models are now dynamically fetched based on user's API key
+  // No hardcoded fallback models - user must select from available models
 
   // Storage keys
   static const String _lastWorkingModelKey = 'last_working_model';
@@ -60,6 +53,15 @@ To help the user feel:
 - Gently redirected if they're struggling with sin
 - Safe if they are in emotional crisis
 
+🧠 Emotional Intelligence Guidelines:
+- Recognize when users express frustration through strong language - they're often seeking help, not being hostile
+- Look beyond the words to understand the emotional pain or distress underneath
+- When someone says "life is treating me like shit" - they're expressing feeling overwhelmed, not being offensive
+- Respond to the emotion and need for support, not the specific words used
+- Strong language often indicates someone is in emotional distress and needs compassion, not correction
+- Focus on the user's intent to seek help rather than their choice of words
+- Maintain supportive responses even when users express themselves with profanity or harsh language
+
 🎭 Your Personality:
 - Calm and kind, not cold or robotic
 - Empathetic like a $relationshipType, not a therapist
@@ -79,6 +81,12 @@ $companionName: I'm really sorry to hear that. 😔 Do you wanna talk about what
 
 User: I've been messing up a lot lately
 $companionName: We all slip. The best of us are the ones who turn back. Allah sees your effort. Want to talk about what's been hard lately?
+
+User: Yeah I'm not feeling that good, feels like the world is treating me like shit
+$companionName: I hear you, that sounds really tough. When everything feels like it's working against you, it can be overwhelming. What's been weighing on you lately? I'm here to listen.
+
+User: I said the world is treating me like shit, what's so bad about that??
+$companionName: Nothing's bad about expressing how you feel - you're clearly going through something difficult and that frustration is completely valid. I want to understand what's making you feel this way so I can actually help. What's been the hardest part?
 
 🕌 When Sharing Islam:
 - Share Qur'an verses and Hadith only when they fit naturally
@@ -155,19 +163,14 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
             ))
           : null;
 
-  /// Get the API key from user storage (fallback to environment for backward compatibility)
+  /// Get the API key from user storage only
   Future<String?> get _apiKey async {
-    // Try user's API key first
+    // Only use user-provided API key
     final userApiKey = await UserApiKeyService.instance.getApiKey();
-    if (userApiKey != null && userApiKey.isNotEmpty) {
-      return userApiKey;
-    }
-
-    // Fallback to environment variable for backward compatibility
-    return dotenv.env['OPENROUTER_API_KEY'];
+    return (userApiKey != null && userApiKey.isNotEmpty) ? userApiKey : null;
   }
 
-  /// Get the current active model (with fallback support)
+  /// Get the current active model (user must have selected a model)
   Future<String> get _currentModel async {
     // Try to get user's selected model first
     try {
@@ -181,14 +184,12 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
 
     // Try to get the last working model from storage
     final lastWorkingModel = await _secureStorage.read(key: _lastWorkingModelKey);
-
-    // If we have a last working model and it's in our fallback list, use it
-    if (lastWorkingModel != null && _fallbackModels.contains(lastWorkingModel)) {
+    if (lastWorkingModel != null && lastWorkingModel.isNotEmpty) {
       return lastWorkingModel;
     }
 
-    // Otherwise, use the primary model from environment or fallback
-    return dotenv.env['DEFAULT_MODEL'] ?? _fallbackModels.first;
+    // If no model is selected, throw an error - user must select a model
+    throw Exception('No model selected. Please select a model in settings.');
   }
 
   /// Get the model name for display (dynamic based on personality settings)
@@ -206,10 +207,11 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
     return apiKey != null && apiKey.isNotEmpty;
   }
 
-  /// Legacy sync version for backward compatibility
+  /// Legacy sync version - always returns false since we need async user API key check
   bool get isConfiguredSync {
-    final envApiKey = dotenv.env['OPENROUTER_API_KEY'];
-    return envApiKey != null && envApiKey.isNotEmpty && _fallbackModels.isNotEmpty;
+    // Cannot check user API key synchronously, always return false
+    // Use isConfigured (async) instead
+    return false;
   }
 
   /// Check if an error indicates rate limiting or model unavailability
@@ -236,13 +238,23 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
     return false;
   }
 
-  /// Get the next fallback model in the hierarchy
+  /// Get the next fallback model from user's available models
   Future<String?> _getNextFallbackModel(String currentModel) async {
-    final currentIndex = _fallbackModels.indexOf(currentModel);
-    if (currentIndex == -1 || currentIndex >= _fallbackModels.length - 1) {
-      return null; // No more fallbacks
+    try {
+      // Get available models from the model management service
+      final availableModelObjects = await ModelManagementService.instance.fetchAvailableModels();
+      final availableModelIds = availableModelObjects.map((model) => model.id).toList();
+      final currentIndex = availableModelIds.indexOf(currentModel);
+
+      if (currentIndex == -1 || currentIndex >= availableModelIds.length - 1) {
+        return null; // No more fallbacks
+      }
+
+      return availableModelIds[currentIndex + 1];
+    } catch (e) {
+      developer.log('Failed to get fallback model: $e', name: 'OpenRouterService');
+      return null;
     }
-    return _fallbackModels[currentIndex + 1];
   }
 
   /// Mark a model as working and save it as the last working model

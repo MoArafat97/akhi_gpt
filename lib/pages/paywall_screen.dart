@@ -282,7 +282,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     final benefits = [
       {
         'icon': Icons.chat_bubble_outline,
-        'title': '500 Messages Daily',
+        'title': '1500 Messages Daily',
         'subtitle': 'vs 75 messages on free plan',
       },
       {

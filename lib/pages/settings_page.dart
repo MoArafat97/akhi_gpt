@@ -97,7 +97,7 @@ class _SettingsPageState extends State<SettingsPage> {
           child: const Text(
             'Settings',
             style: TextStyle(
-              color: Colors.white,
+              color: Color(0xFF424242), // Dark gray for consistency
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -115,7 +115,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _OpenRouterConfigurationCard(),
           const ApiKeySettingsWidget(),
           const SizedBox(height: 8),
-          const ModelSelectionWidget(),
+          ModelSelectionWidget(key: modelSelectionWidgetKey),
 
           // Profile Section
           _SectionHeader('Profile'),
@@ -145,16 +145,16 @@ class _SettingsPageState extends State<SettingsPage> {
 
           _SectionHeader('About'),
           ListTile(
-            title: const Text('Privacy Policy', style: TextStyle(color: Colors.white)),
-            subtitle: const Text('All data stays on your device.', style: TextStyle(color: Colors.white70)),
+            title: const Text('Privacy Policy', style: TextStyle(color: Color(0xFF424242))),
+            subtitle: const Text('All data stays on your device.', style: TextStyle(color: Color(0xFF666666))),
           ),
           ListTile(
-            title: const Text('App Version', style: TextStyle(color: Colors.white)),
+            title: const Text('App Version', style: TextStyle(color: Color(0xFF424242))),
             subtitle: FutureBuilder(
               future: PackageInfo.fromPlatform(),
               builder: (_, snap) => Text(
                 snap.hasData ? snap.data!.version : '...',
-                style: const TextStyle(color: Colors.white70),
+                style: const TextStyle(color: Color(0xFF666666)),
               ),
             ),
           ),
@@ -163,9 +163,9 @@ class _SettingsPageState extends State<SettingsPage> {
           if (_isDeveloperMode) ...[
             _SectionHeader('Developer'),
             ListTile(
-              leading: const Icon(Icons.play_circle_outline, color: Colors.white),
-              title: const Text('Test Onboarding Flow', style: TextStyle(color: Colors.white)),
-              subtitle: const Text('Replay the onboarding experience', style: TextStyle(color: Colors.white70)),
+              leading: const Icon(Icons.play_circle_outline, color: Color(0xFF424242)),
+              title: const Text('Test Onboarding Flow', style: TextStyle(color: Color(0xFF424242))),
+              subtitle: const Text('Replay the onboarding experience', style: TextStyle(color: Color(0xFF666666))),
               onTap: () async {
                 if (await SettingsService.canAccessDeveloperRoute('/onboard1')) {
                   Navigator.pushNamed(context, '/onboard1');
@@ -173,9 +173,9 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.bug_report, color: Colors.white),
-              title: const Text('API Diagnostics', style: TextStyle(color: Colors.white)),
-              subtitle: const Text('Test API connectivity and configuration', style: TextStyle(color: Colors.white70)),
+              leading: const Icon(Icons.bug_report, color: Color(0xFF424242)),
+              title: const Text('API Diagnostics', style: TextStyle(color: Color(0xFF424242))),
+              subtitle: const Text('Test API connectivity and configuration', style: TextStyle(color: Color(0xFF666666))),
               onTap: () async {
                 if (await SettingsService.canAccessDeveloperRoute('/diagnostics')) {
                   Navigator.pushNamed(context, '/diagnostics');
@@ -196,7 +196,7 @@ class _SettingsPageState extends State<SettingsPage> {
         style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: Colors.white,
+          color: Color(0xFF424242), // Dark gray for better contrast
         ),
       ),
     );
@@ -249,27 +249,12 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'REQUIRED',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
+              // Remove the "REQUIRED" container
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            'Configure your OpenRouter API key and select an AI model to start chatting. This is required for the app to function.',
+            'Configure your OpenRouter API key and select an AI model to start chatting.',
             style: TextStyle(
               fontSize: 14,
               color: Colors.white.withValues(alpha: 0.8),
@@ -287,7 +272,7 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (context, snapshot) {
         final value = snapshot.data ?? defaultOn;
         return SwitchListTile(
-          title: Text(title, style: const TextStyle(color: Colors.white)),
+          title: Text(title, style: const TextStyle(color: Color(0xFF424242))),
           value: value,
           onChanged: (newValue) {
             setBool(key, newValue);
@@ -306,11 +291,11 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (context, snapshot) {
         final value = snapshot.data ?? defaultVal;
         return ListTile(
-          title: Text(title, style: const TextStyle(color: Colors.white)),
+          title: Text(title, style: const TextStyle(color: Color(0xFF424242))),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${value.round()}', style: const TextStyle(color: Colors.white70)),
+              Text('${value.round()}', style: const TextStyle(color: Color(0xFF666666))),
               Slider(
                 value: value,
                 min: min,
@@ -336,16 +321,16 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (context, snapshot) {
         final value = snapshot.data ?? defaultVal;
         return ListTile(
-          title: Text(title, style: const TextStyle(color: Colors.white)),
+          title: Text(title, style: const TextStyle(color: Color(0xFF424242))),
           subtitle: DropdownButton<String>(
             value: options.contains(value) ? value : defaultVal,
             dropdownColor: widget.bgColor,
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: Color(0xFF424242)),
             underline: Container(height: 1, color: Colors.white54),
             items: options.map((String option) {
               return DropdownMenuItem<String>(
                 value: option,
-                child: Text(option, style: const TextStyle(color: Colors.white)),
+                child: Text(option, style: const TextStyle(color: Color(0xFF424242))),
               );
             }).toList(),
             onChanged: (String? newValue) {
@@ -366,10 +351,10 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (context, snapshot) {
         final hasKey = snapshot.data?.isNotEmpty == true;
         return ListTile(
-          title: Text(title, style: const TextStyle(color: Colors.white)),
+          title: Text(title, style: const TextStyle(color: Color(0xFF424242))),
           subtitle: Text(
             hasKey ? '••••••••••••••••' : 'Not set',
-            style: const TextStyle(color: Colors.white70),
+            style: const TextStyle(color: Color(0xFF666666)),
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -396,14 +381,14 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: widget.bgColor,
-        title: Text('Edit $title', style: const TextStyle(color: Colors.white)),
+        title: Text('Edit $title', style: const TextStyle(color: Color(0xFF424242))),
         content: TextField(
           controller: controller,
           obscureText: true,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Color(0xFF424242)),
           decoration: InputDecoration(
             hintText: 'Enter API key',
-            hintStyle: const TextStyle(color: Colors.white54),
+            hintStyle: const TextStyle(color: Color(0xFF666666)),
             enabledBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: Colors.white54),
             ),
@@ -415,7 +400,7 @@ class _SettingsPageState extends State<SettingsPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white)),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF666666))),
           ),
           TextButton(
             onPressed: () {
@@ -425,7 +410,7 @@ class _SettingsPageState extends State<SettingsPage> {
               }
               Navigator.pop(context);
             },
-            child: const Text('Save', style: TextStyle(color: Colors.white)),
+            child: const Text('Save', style: TextStyle(color: Color(0xFF424242))),
           ),
         ],
       ),
@@ -437,15 +422,15 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: widget.bgColor,
-        title: const Text('Delete API Key', style: TextStyle(color: Colors.white)),
+        title: const Text('Delete API Key', style: TextStyle(color: Color(0xFF424242))),
         content: const Text(
           'Are you sure you want to delete this API key?',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Color(0xFF424242)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white)),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF666666))),
           ),
           TextButton(
             onPressed: () {
@@ -466,7 +451,7 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (context, snapshot) {
         final value = snapshot.data ?? true;
         return SwitchListTile(
-          title: const Text('Save chat history', style: TextStyle(color: Colors.white)),
+          title: const Text('Save chat history', style: TextStyle(color: Color(0xFF424242))),
           value: value,
           onChanged: (newValue) async {
             await setBool('saveChatHistory', newValue);
@@ -515,25 +500,25 @@ class _SettingsPageState extends State<SettingsPage> {
             return ExpansionTile(
               title: Text(
                 'Chat History Management',
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Color(0xFF424242)),
               ),
               subtitle: Text(
                 '$count saved conversations',
-                style: const TextStyle(color: Colors.white70),
+                style: const TextStyle(color: Color(0xFF666666)),
               ),
-              iconColor: Colors.white,
-              collapsedIconColor: Colors.white,
+              iconColor: Color(0xFF424242),
+              collapsedIconColor: Color(0xFF424242),
               children: [
                 ListTile(
-                  leading: const Icon(Icons.download, color: Colors.white),
-                  title: const Text('Export All Chats', style: TextStyle(color: Colors.white)),
-                  subtitle: const Text('Export as JSON, TXT, or Markdown', style: TextStyle(color: Colors.white70)),
+                  leading: const Icon(Icons.download, color: Color(0xFF424242)),
+                  title: const Text('Export All Chats', style: TextStyle(color: Color(0xFF424242))),
+                  subtitle: const Text('Export as JSON, TXT, or Markdown', style: TextStyle(color: Color(0xFF666666))),
                   onTap: () => _showExportDialog(),
                 ),
                 ListTile(
                   leading: const Icon(Icons.delete_forever, color: Colors.red),
                   title: const Text('Delete All Chats', style: TextStyle(color: Colors.red)),
-                  subtitle: const Text('Permanently delete all saved conversations', style: TextStyle(color: Colors.white70)),
+                  subtitle: const Text('Permanently delete all saved conversations', style: TextStyle(color: Color(0xFF666666))),
                   onTap: () => _showDeleteAllDialog(),
                 ),
               ],
@@ -549,10 +534,10 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: widget.bgColor,
-        title: const Text('Export Chat History', style: TextStyle(color: Colors.white)),
+        title: const Text('Export Chat History', style: TextStyle(color: Color(0xFF424242))),
         content: const Text(
           'Choose export format:',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Color(0xFF424242)),
         ),
         actions: [
           TextButton(
@@ -560,25 +545,25 @@ class _SettingsPageState extends State<SettingsPage> {
               Navigator.pop(context);
               _exportChats('json');
             },
-            child: const Text('JSON', style: TextStyle(color: Colors.white)),
+            child: const Text('JSON', style: TextStyle(color: Color(0xFF424242))),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _exportChats('txt');
             },
-            child: const Text('Text', style: TextStyle(color: Colors.white)),
+            child: const Text('Text', style: TextStyle(color: Color(0xFF424242))),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _exportChats('md');
             },
-            child: const Text('Markdown', style: TextStyle(color: Colors.white)),
+            child: const Text('Markdown', style: TextStyle(color: Color(0xFF424242))),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF666666))),
           ),
         ],
       ),
@@ -643,15 +628,15 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: widget.bgColor,
-        title: const Text('Delete All Chat History', style: TextStyle(color: Colors.white)),
+        title: const Text('Delete All Chat History', style: TextStyle(color: Color(0xFF424242))),
         content: const Text(
           'This will permanently delete all saved conversations. This action cannot be undone.',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Color(0xFF424242)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white)),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF666666))),
           ),
           TextButton(
             onPressed: () async {
@@ -697,15 +682,15 @@ class _SettingsPageState extends State<SettingsPage> {
         return ListTile(
           leading: Icon(
             Icons.person,
-            color: Colors.white.withValues(alpha: 0.8),
+            color: Color(0xFF424242).withValues(alpha: 0.8),
           ),
           title: const Text(
             'Companion Type',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+            style: TextStyle(color: Color(0xFF424242), fontWeight: FontWeight.w500),
           ),
           subtitle: Text(
             currentGender.displayName,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+            style: TextStyle(color: Color(0xFF666666).withValues(alpha: 0.7)),
           ),
           trailing: Icon(
             Icons.arrow_forward_ios,
@@ -727,14 +712,14 @@ class _SettingsPageState extends State<SettingsPage> {
           backgroundColor: const Color(0xFF2D2D2D),
           title: const Text(
             'Choose Your Companion',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            style: TextStyle(color: Color(0xFF424242), fontWeight: FontWeight.w600),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
                 'Who would you like to chat with?',
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(color: Color(0xFF666666)),
               ),
               const SizedBox(height: 20),
 
@@ -764,7 +749,7 @@ class _SettingsPageState extends State<SettingsPage> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text(
                 'Cancel',
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(color: Color(0xFF666666)),
               ),
             ),
           ],
@@ -803,7 +788,7 @@ class _SettingsPageState extends State<SettingsPage> {
           children: [
             Icon(
               icon,
-              color: isSelected ? const Color(0xFF9C6644) : Colors.white70,
+              color: isSelected ? const Color(0xFF9C6644) : const Color(0xFF666666),
               size: 24,
             ),
             const SizedBox(width: 16),
@@ -814,7 +799,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Text(
                     title,
                     style: TextStyle(
-                      color: isSelected ? const Color(0xFF9C6644) : Colors.white,
+                      color: isSelected ? const Color(0xFF9C6644) : const Color(0xFF424242),
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
@@ -822,7 +807,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Text(
                     description,
                     style: TextStyle(
-                      color: isSelected ? const Color(0xFF9C6644).withValues(alpha: 0.8) : Colors.white70,
+                      color: isSelected ? const Color(0xFF9C6644).withValues(alpha: 0.8) : const Color(0xFF666666),
                       fontSize: 14,
                     ),
                   ),

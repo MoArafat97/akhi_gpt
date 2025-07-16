@@ -265,7 +265,7 @@ class ErrorHandler {
   static void logError(ErrorAnalysis analysis, {String? context}) {
     final contextStr = context != null ? '[$context] ' : '';
     final message = '$contextStr${analysis.category.name.toUpperCase()}: ${analysis.userMessage}';
-    
+
     switch (analysis.severity) {
       case ErrorSeverity.low:
         developer.log('ℹ️ $message', name: 'ErrorHandler');
@@ -277,64 +277,12 @@ class ErrorHandler {
         developer.log('❌ $message', name: 'ErrorHandler');
         break;
     }
-    
+
     if (analysis.technicalDetails.isNotEmpty) {
       developer.log('🔍 Technical details: ${analysis.technicalDetails}', name: 'ErrorHandler');
     }
   }
-}
 
-/// Comprehensive error analysis result
-class ErrorAnalysis {
-  final ErrorCategory category;
-  final ErrorSeverity severity;
-  final String userMessage;
-  final String technicalDetails;
-  final bool shouldRetry;
-  final bool shouldFallback;
-  final Duration? retryDelay;
-  final bool requiresConfiguration;
-  
-  const ErrorAnalysis({
-    required this.category,
-    required this.severity,
-    required this.userMessage,
-    required this.technicalDetails,
-    required this.shouldRetry,
-    required this.shouldFallback,
-    this.retryDelay,
-    this.requiresConfiguration = false,
-  });
-  
-  @override
-  String toString() {
-    return 'ErrorAnalysis(category: $category, severity: $severity, shouldRetry: $shouldRetry, shouldFallback: $shouldFallback)';
-  }
-}
-
-/// Error categories for classification
-enum ErrorCategory {
-  network,
-  authentication,
-  authorization,
-  rateLimit,
-  model,
-  server,
-  client,
-  api,
-  configuration,
-  unknown,
-}
-
-/// Error severity levels
-enum ErrorSeverity {
-  low,    // Minor issues, user can continue
-  medium, // Noticeable issues, but recoverable
-  high,   // Serious issues, may require user action
-}
-
-/// UI-specific error handling methods for consistent user feedback
-extension UIErrorHandler on ErrorHandler {
   /// Show standardized error SnackBar with optional action
   static void showErrorSnackBar(
     BuildContext context,
@@ -446,6 +394,57 @@ extension UIErrorHandler on ErrorHandler {
     }
   }
 }
+
+/// Comprehensive error analysis result
+class ErrorAnalysis {
+  final ErrorCategory category;
+  final ErrorSeverity severity;
+  final String userMessage;
+  final String technicalDetails;
+  final bool shouldRetry;
+  final bool shouldFallback;
+  final Duration? retryDelay;
+  final bool requiresConfiguration;
+  
+  const ErrorAnalysis({
+    required this.category,
+    required this.severity,
+    required this.userMessage,
+    required this.technicalDetails,
+    required this.shouldRetry,
+    required this.shouldFallback,
+    this.retryDelay,
+    this.requiresConfiguration = false,
+  });
+  
+  @override
+  String toString() {
+    return 'ErrorAnalysis(category: $category, severity: $severity, shouldRetry: $shouldRetry, shouldFallback: $shouldFallback)';
+  }
+}
+
+/// Error categories for classification
+enum ErrorCategory {
+  network,
+  authentication,
+  authorization,
+  rateLimit,
+  model,
+  server,
+  client,
+  api,
+  configuration,
+  unknown,
+}
+
+/// Error severity levels
+enum ErrorSeverity {
+  low,    // Minor issues, user can continue
+  medium, // Noticeable issues, but recoverable
+  high,   // Serious issues, may require user action
+}
+
+
 
 /// Subscription-specific error handling methods
 extension SubscriptionErrorHandler on ErrorHandler {

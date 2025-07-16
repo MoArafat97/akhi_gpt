@@ -178,8 +178,8 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const ListTile(
-        leading: Icon(Icons.psychology, color: Colors.white),
-        title: Text('Personality Style', style: TextStyle(color: Colors.white)),
+        leading: Icon(Icons.psychology, color: Color(0xFF424242)),
+        title: Text('Personality Style', style: TextStyle(color: Color(0xFF424242))),
         trailing: CircularProgressIndicator(),
       );
     }
@@ -188,25 +188,25 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
       children: [
         // Companion type selection
         ListTile(
-          leading: const Icon(Icons.person, color: Colors.white),
-          title: const Text('Companion Type', style: TextStyle(color: Colors.white)),
+          leading: const Icon(Icons.person, color: Color(0xFF424242)),
+          title: const Text('Companion Type', style: TextStyle(color: Color(0xFF424242))),
           subtitle: Text(
             _userGender.displayName,
-            style: const TextStyle(color: Colors.white70),
+            style: const TextStyle(color: Color(0xFF666666)),
           ),
-          trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+          trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF424242), size: 16),
           onTap: () => _showCompanionTypeDialog(),
         ),
 
         // Main toggle switch
         ListTile(
-          leading: const Icon(Icons.psychology, color: Colors.white),
-          title: const Text('Personality Style', style: TextStyle(color: Colors.white)),
+          leading: const Icon(Icons.psychology, color: Color(0xFF424242)),
+          title: const Text('Personality Style', style: TextStyle(color: Color(0xFF424242))),
           subtitle: Text(
             _isPersonalityEnabled
                 ? 'Using ${_selectedStyle.displayName}'
                 : 'Using Simple Modern English',
-            style: const TextStyle(color: Colors.white70),
+            style: const TextStyle(color: Color(0xFF666666)),
           ),
           trailing: Switch(
             value: _isPersonalityEnabled,
@@ -230,7 +230,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
                 const Text(
                   'Choose Style:',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF424242),
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
@@ -277,7 +277,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
             children: [
               Icon(
                 isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                color: isSelected ? Colors.white : Colors.white70,
+                color: isSelected ? Color(0xFF424242) : Color(0xFF666666),
                 size: 20,
               ),
               const SizedBox(width: 12),
@@ -291,8 +291,8 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
                           style.displayName,
                           style: TextStyle(
                             color: hasAccess
-                                ? (isSelected ? Colors.white : Colors.white70)
-                                : Colors.white54,
+                                ? (isSelected ? Color(0xFF424242) : Color(0xFF666666))
+                                : Color(0xFF999999),
                             fontSize: 16,
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                           ),
@@ -314,7 +314,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
                           : _getStyleDescription(style),
                       style: TextStyle(
                         color: hasAccess
-                            ? (isSelected ? Colors.white70 : Colors.white54)
+                            ? (isSelected ? Color(0xFF666666) : Color(0xFF999999))
                             : Colors.amber.withOpacity(0.8),
                         fontSize: 12,
                         fontStyle: isPremium && !SubscriptionService.instance.isPremium
@@ -340,14 +340,14 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
           backgroundColor: const Color(0xFF2D2D2D),
           title: const Text(
             'Choose Your Companion',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            style: TextStyle(color: Color(0xFF424242), fontWeight: FontWeight.w600),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
                 'Who would you like to chat with?',
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(color: Color(0xFF666666)),
               ),
               const SizedBox(height: 20),
 
@@ -375,7 +375,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text(
                 'Cancel',
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(color: Color(0xFF666666)),
               ),
             ),
           ],
@@ -411,7 +411,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.white : Colors.white70,
+              color: isSelected ? Color(0xFF424242) : Color(0xFF666666),
               size: 24,
             ),
             const SizedBox(width: 16),
@@ -422,7 +422,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
                   Text(
                     title,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.white70,
+                      color: isSelected ? Color(0xFF424242) : Color(0xFF666666),
                       fontSize: 16,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
@@ -431,7 +431,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
                   Text(
                     description,
                     style: TextStyle(
-                      color: isSelected ? Colors.white70 : Colors.white54,
+                      color: isSelected ? Color(0xFF666666) : Color(0xFF999999),
                       fontSize: 12,
                     ),
                   ),

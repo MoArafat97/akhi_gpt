@@ -4,35 +4,16 @@ import 'dart:developer' as developer;
 /// Utility class for validating configuration and environment setup
 class ConfigValidator {
   
-  /// Validate API key format and presence
+  /// Validate API key format and presence (now user-dependent)
   static ValidationResult validateApiKey() {
-    developer.log('🔍 Validating API key...', name: 'ConfigValidator');
-    
-    final apiKey = dotenv.env['OPENROUTER_API_KEY'];
-    
-    if (apiKey == null || apiKey.isEmpty) {
-      return ValidationResult(
-        isValid: false,
-        error: 'API key not found in environment variables',
-        suggestion: 'Add OPENROUTER_API_KEY to your .env file',
-      );
-    }
-    
-    if (!apiKey.startsWith('sk-or-v1-')) {
-      return ValidationResult(
-        isValid: false,
-        error: 'API key format is invalid',
-        suggestion: 'OpenRouter API keys should start with "sk-or-v1-"',
-      );
-    }
-    
-    if (apiKey.length < 20) {
-      return ValidationResult(
-        isValid: false,
-        error: 'API key appears to be too short',
-        suggestion: 'Verify your API key is complete and not truncated',
-      );
-    }
+    developer.log('🔍 API key validation is now user-dependent...', name: 'ConfigValidator');
+
+    // API keys are now provided by users, not environment variables
+    return ValidationResult(
+      isValid: false,
+      error: 'API key validation requires user input',
+      suggestion: 'Users must provide their own OpenRouter API keys through the app settings',
+    );
     
     developer.log('✅ API key validation passed', name: 'ConfigValidator');
     return ValidationResult(isValid: true);

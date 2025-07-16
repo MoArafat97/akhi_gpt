@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/user_api_key_service.dart';
 import '../utils/error_handler.dart';
+import 'model_selection_widget.dart';
 
 class ApiKeySettingsWidget extends StatefulWidget {
   const ApiKeySettingsWidget({super.key});
@@ -99,6 +100,9 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
             'API key saved and validated successfully! '
             '${validationResult.availableModels ?? 0} models available.',
           );
+
+          // Notify ModelSelectionWidget to refresh
+          _notifyModelSelectionWidget();
         }
       } else {
         if (mounted) {
@@ -161,6 +165,16 @@ class _ApiKeySettingsWidgetState extends State<ApiKeySettingsWidget> {
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     }
+  }
+
+  /// Notify ModelSelectionWidget to refresh when API key is validated
+  void _notifyModelSelectionWidget() {
+    // Use a small delay to ensure the API key is fully saved
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (modelSelectionWidgetKey.currentState != null) {
+        modelSelectionWidgetKey.currentState!.refresh();
+      }
+    });
   }
 
   Future<void> _testConnection() async {
