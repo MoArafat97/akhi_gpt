@@ -1,0 +1,104 @@
+# Docker Compose configuration for local SonarQube development
+# This sets up SonarQube with PostgreSQL for local code quality analysis
+
+version: '3.8'
+
+services:
+  # PostgreSQL database for SonarQube
+  sonarqube-db:
+    image: postgres:15-alpine
+    container_name: nafs-ai-sonar-db
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar_password
+      POSTGRES_DB: sonarqube
+    volumes:
+      - sonarqube_db_data:/var/lib/postgresql/data
+    networks:
+      - sonar-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # SonarQube server
+  sonarqube:
+    image: sonarqube:10.3-community
+    container_name: nafs-ai-sonarqube
+    depends_on:
+      sonarqube-db:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonarqube
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar_password
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: true
+      # Increase memory limits for better performance
+      SONAR_CE_JAVAOPTS: "-Xmx2g -Xms512m"
+      SONAR_WEB_JAVAOPTS: "-Xmx2g -Xms512m"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_conf:/opt/sonarqube/conf
+    ports:
+      - "9000:9000"
+    networks:
+      - sonar-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/api/system/status | grep -q '\"status\":\"UP\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # SonarQube Scanner for running analysis
+  sonar-scanner:
+    image: sonarsource/sonar-scanner-cli:5.0
+    container_name: nafs-ai-sonar-scanner
+    depends_on:
+      sonarqube:
+        condition: service_healthy
+    environment:
+      SONAR_HOST_URL: http://sonarqube:9000
+      SONAR_SCANNER_OPTS: "-Xmx2g"
+    volumes:
+      - .:/usr/src
+      - sonar_scanner_cache:/opt/sonar-scanner/.sonar/cache
+    working_dir: /usr/src
+    networks:
+      - sonar-network
+    profiles:
+      - scanner  # Only start when explicitly requested
+    command: >
+      sh -c "
+        echo 'Waiting for SonarQube to be ready...' &&
+        until curl -f http://sonarqube:9000/api/system/status | grep -q '\"status\":\"UP\"'; do
+          echo 'SonarQube not ready yet, waiting...'
+          sleep 10
+        done &&
+        echo 'SonarQube is ready, starting analysis...' &&
+        sonar-scanner
+      "
+
+volumes:
+  sonarqube_data:
+    name: nafs-ai-sonarqube-data
+  sonarqube_db_data:
+    name: nafs-ai-sonarqube-db-data
+  sonarqube_logs:
+    name: nafs-ai-sonarqube-logs
+  sonarqube_extensions:
+    name: nafs-ai-sonarqube-extensions
+  sonarqube_conf:
+    name: nafs-ai-sonarqube-conf
+  sonar_scanner_cache:
+    name: nafs-ai-sonar-scanner-cache
+
+networks:
+  sonar-network:
+    name: nafs-ai-sonar-network
+    driver: bridge
