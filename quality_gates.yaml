@@ -1,0 +1,255 @@
+# Quality Gates Configuration for NafsAI
+# This file defines the quality standards that must be met before deployment
+
+# Global quality thresholds
+quality_gates:
+  # Code coverage requirements
+  coverage:
+    line_coverage:
+      minimum: 80.0
+      target: 90.0
+      critical_paths: 95.0  # For security-sensitive code
+    
+    function_coverage:
+      minimum: 85.0
+      target: 92.0
+      critical_paths: 98.0
+    
+    branch_coverage:
+      minimum: 75.0
+      target: 85.0
+      critical_paths: 90.0
+  
+  # Code quality metrics
+  code_quality:
+    # Maintainability rating (A-E scale, A being best)
+    maintainability_rating: "A"
+    
+    # Technical debt ratio (percentage)
+    technical_debt_ratio:
+      maximum: 5.0    # Max 5% technical debt
+      target: 2.0     # Target 2% or less
+    
+    # Code duplication
+    duplication:
+      maximum: 3.0    # Max 3% duplicated lines
+      target: 1.0     # Target 1% or less
+    
+    # Complexity metrics
+    complexity:
+      cyclomatic_complexity:
+        maximum: 10   # Max complexity per function
+        target: 5     # Target complexity
+      
+      cognitive_complexity:
+        maximum: 15   # Max cognitive complexity
+        target: 8     # Target cognitive complexity
+  
+  # Security requirements
+  security:
+    # Security hotspots must be reviewed
+    security_hotspots: 0
+    
+    # No security vulnerabilities allowed
+    vulnerabilities: 0
+    
+    # Security rating (A-E scale)
+    security_rating: "A"
+  
+  # Reliability requirements
+  reliability:
+    # No bugs in new code
+    new_bugs: 0
+    
+    # Reliability rating (A-E scale)
+    reliability_rating: "A"
+    
+    # Code smells in new code
+    new_code_smells:
+      maximum: 5
+      target: 0
+
+# Service-specific quality gates
+service_gates:
+  # Critical services require higher standards
+  critical_services:
+    paths:
+      - "lib/services/openrouter_service.dart"
+      - "lib/services/subscription_service.dart"
+      - "lib/services/encryption_service.dart"
+      - "lib/services/secure_config_service.dart"
+      - "lib/services/user_api_key_service.dart"
+      - "lib/services/diagnostic_service.dart"
+    
+    requirements:
+      line_coverage: 95.0
+      function_coverage: 98.0
+      branch_coverage: 90.0
+      complexity_max: 8
+      duplication_max: 1.0
+  
+  # UI components (slightly relaxed)
+  ui_components:
+    paths:
+      - "lib/pages/**"
+      - "lib/widgets/**"
+    
+    requirements:
+      line_coverage: 75.0
+      function_coverage: 80.0
+      branch_coverage: 70.0
+      complexity_max: 12
+      duplication_max: 5.0
+  
+  # Utility and helper classes
+  utilities:
+    paths:
+      - "lib/utils/**"
+      - "lib/models/**"
+    
+    requirements:
+      line_coverage: 85.0
+      function_coverage: 90.0
+      branch_coverage: 80.0
+      complexity_max: 10
+      duplication_max: 2.0
+
+# Flutter-specific quality rules
+flutter_specific:
+  # Widget testing requirements
+  widget_tests:
+    # All custom widgets must have tests
+    coverage_required: true
+    
+    # Widget test coverage threshold
+    minimum_coverage: 80.0
+  
+  # Performance requirements
+  performance:
+    # Build time limits (in seconds)
+    build_time_limit: 300
+    
+    # App size limits (in MB)
+    app_size_limit:
+      android: 50
+      ios: 50
+    
+    # Memory usage in tests
+    memory_leak_detection: true
+  
+  # Platform-specific rules
+  platform_compliance:
+    # Android-specific
+    android:
+      target_sdk_version: 34
+      min_sdk_version: 21
+      
+    # iOS-specific
+    ios:
+      deployment_target: "12.0"
+      
+  # Accessibility requirements
+  accessibility:
+    # Semantic labels required
+    semantic_labels: true
+    
+    # Color contrast requirements
+    color_contrast_ratio: 4.5
+
+# Security-specific gates for NafsAI
+security_gates:
+  # API key handling
+  api_security:
+    # No hardcoded API keys
+    hardcoded_secrets: 0
+    
+    # Secure storage usage
+    secure_storage_required: true
+    
+    # Encryption requirements
+    encryption_required:
+      - "chat_data"
+      - "user_credentials"
+      - "api_keys"
+  
+  # Data protection
+  data_protection:
+    # PII handling compliance
+    pii_protection: true
+    
+    # Data encryption at rest
+    encryption_at_rest: true
+    
+    # Secure transmission
+    https_only: true
+  
+  # Authentication and authorization
+  auth_security:
+    # Strong authentication required
+    strong_auth: true
+    
+    # Session management
+    secure_sessions: true
+    
+    # Permission model
+    least_privilege: true
+
+# Deployment gates
+deployment_gates:
+  # Pre-deployment checks
+  pre_deployment:
+    # All tests must pass
+    test_success_rate: 100.0
+    
+    # No critical issues
+    critical_issues: 0
+    
+    # Security scan passed
+    security_scan_passed: true
+    
+    # Performance benchmarks met
+    performance_benchmarks_met: true
+  
+  # Post-deployment monitoring
+  post_deployment:
+    # Crash-free rate requirement
+    crash_free_rate: 99.8
+    
+    # Response time requirements
+    api_response_time_p95: 2000  # 2 seconds
+    
+    # Error rate threshold
+    error_rate_threshold: 0.1    # 0.1%
+
+# Exemptions and overrides
+exemptions:
+  # Files that can be exempted from certain rules
+  generated_files:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/*.mocks.dart"
+    
+  # Legacy code with relaxed standards
+  legacy_code:
+    paths: []  # No legacy code in this project
+    
+  # Temporary exemptions (with expiry dates)
+  temporary:
+    - path: "lib/main.dart"
+      rules: ["line_coverage"]
+      reason: "Main entry point difficult to test"
+      expires: "2024-12-31"
+
+# Notification settings
+notifications:
+  # Quality gate failures
+  on_failure:
+    - type: "github_status"
+      context: "quality-gates"
+    - type: "slack"
+      channel: "#dev-alerts"
+  
+  # Quality improvements
+  on_improvement:
+    - type: "github_comment"
+      message: "Quality metrics improved! 🎉"

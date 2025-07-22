@@ -1,0 +1,79 @@
+# Code Coverage Configuration for NafsAI
+# This file defines comprehensive coverage collection settings
+
+# Coverage collection settings
+coverage:
+  # Include all source files for coverage analysis
+  include:
+    - 'lib/**/*.dart'
+  
+  # Exclude generated files and test files from coverage
+  exclude:
+    - 'lib/**/*.g.dart'          # Generated files (Hive, JSON serialization)
+    - 'lib/**/*.freezed.dart'    # Freezed generated files
+    - 'lib/**/*.mocks.dart'      # Mockito generated files
+    - 'lib/l10n/**'              # Localization files
+    - 'lib/main.dart'            # Main entry point (hard to test)
+    - 'test/**'                  # Test files themselves
+    - 'integration_test/**'      # Integration test files
+
+# Test execution settings
+test:
+  # Run all test types for comprehensive coverage
+  unit_tests: true
+  widget_tests: true
+  integration_tests: true
+  
+  # Test timeout settings
+  timeout: 30s
+  
+  # Parallel test execution
+  concurrency: 4
+
+# Coverage reporting settings
+reporting:
+  # Output formats
+  formats:
+    - lcov      # For CI/CD integration
+    - html      # For local viewing
+    - json      # For programmatic analysis
+    - cobertura # For SonarQube integration
+  
+  # Output directories
+  output_dir: 'coverage'
+  html_dir: 'coverage/html'
+  
+  # Coverage thresholds
+  thresholds:
+    global:
+      line: 80        # 80% line coverage minimum
+      function: 85    # 85% function coverage minimum
+      branch: 75      # 75% branch coverage minimum
+    
+    # Service-specific thresholds (higher for critical components)
+    services:
+      line: 90
+      function: 95
+      branch: 85
+    
+    # Security-related code (highest standards)
+    security:
+      line: 95
+      function: 98
+      branch: 90
+
+# Critical paths that require high coverage
+critical_paths:
+  - 'lib/services/openrouter_service.dart'
+  - 'lib/services/subscription_service.dart'
+  - 'lib/services/encryption_service.dart'
+  - 'lib/services/secure_config_service.dart'
+  - 'lib/services/user_api_key_service.dart'
+  - 'lib/services/diagnostic_service.dart'
+  - 'lib/utils/error_handler.dart'
+
+# Security-sensitive files requiring maximum coverage
+security_critical:
+  - 'lib/services/encryption_service.dart'
+  - 'lib/services/secure_config_service.dart'
+  - 'lib/services/user_api_key_service.dart'
