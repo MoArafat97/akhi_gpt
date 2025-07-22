@@ -162,8 +162,8 @@ async function streamChatWithFallback(model, messages, res, attempt = 1) {
         headers: {
           'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://akhi-gpt.app',
-          'X-Title': 'Akhi GPT Enhanced Proxy'
+          'HTTP-Referer': 'https://nafs-ai.app',
+          'X-Title': 'NafsAI Enhanced Proxy'
         },
         body: JSON.stringify({
           model: model,

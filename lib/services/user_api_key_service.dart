@@ -102,8 +102,8 @@ class UserApiKeyService {
         options: Options(
           headers: {
             'Authorization': 'Bearer $keyToValidate',
-            'HTTP-Referer': 'https://akhi-gpt.app',
-            'X-Title': 'Akhi GPT',
+            'HTTP-Referer': 'https://nafs-ai.app',
+            'X-Title': 'NafsAI',
           },
         ),
       );

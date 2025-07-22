@@ -201,9 +201,9 @@ NafsAI isn't just another chatbot—it's your understanding companion who:
 ## 🚀 **Getting Started**
 
 ### **For Users**
-1. **Download**: Get Akhi GPT from App Store or Google Play
+1. **Download**: Get NafsAI from App Store or Google Play
 2. **Open**: Launch the app—no registration required
-3. **Chat**: Start your first conversation with Akhi
+3. **Chat**: Start your first conversation with your companion
 4. **Explore**: Try journaling and mood tracking features
 
 ### **For Developers**
@@ -217,8 +217,8 @@ NafsAI isn't just another chatbot—it's your understanding companion who:
 #### **Quick Setup**
 ```bash
 # Clone the repository
-git clone https://github.com/MoArafat97/akhi-gpt.git
-cd akhi-gpt
+git clone https://github.com/MoArafat97/nafs_ai.git
+cd nafs_ai
 
 # Install Flutter dependencies
 flutter pub get
@@ -249,7 +249,7 @@ flutter run
 2. Create a free account
 3. Go to Settings → API Keys
 4. Create a new API key
-5. Enter it in the Akhi GPT app
+5. Enter it in the NafsAI app
 
 ### **Supported Models**
 - **Free Models**: Many models available at no cost
@@ -297,9 +297,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 **Support & Contact**
 
-- **Issues**: [GitHub Issues](https://github.com/MoArafat97/akhi-gpt/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/MoArafat97/akhi-gpt/discussions)
-- **Email**: [Contact Us](mailto:support@akhi-gpt.app)
+- **Issues**: [GitHub Issues](https://github.com/MoArafat97/nafs_ai/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/MoArafat97/nafs_ai/discussions)
+- **Email**: [Contact Us](mailto:support@nafs-ai.app)
 
 ### **Crisis Resources**
 - **UK**: Samaritans - 116 123 (free, 24/7)

@@ -223,7 +223,7 @@ class _OpenRouterSetupPageState extends State<OpenRouterSetupPage> {
           ),
           const SizedBox(height: 24),
           const Text(
-            'Welcome to Akhi GPT',
+            'Welcome to NafsAI',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
