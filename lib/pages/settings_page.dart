@@ -589,15 +589,15 @@ class _SettingsPageState extends State<SettingsPage> {
       switch (format) {
         case 'json':
           content = jsonEncode(histories.map((h) => h.toJson()).toList());
-          filename = 'akhi_chat_history_${DateTime.now().millisecondsSinceEpoch}.json';
+          filename = 'nafs_ai_chat_history_${DateTime.now().millisecondsSinceEpoch}.json';
           break;
         case 'md':
           content = histories.map((h) => h.toMarkdown()).join('\n---\n\n');
-          filename = 'akhi_chat_history_${DateTime.now().millisecondsSinceEpoch}.md';
+          filename = 'nafs_ai_chat_history_${DateTime.now().millisecondsSinceEpoch}.md';
           break;
         default: // txt
           content = histories.map((h) => h.toPlainText()).join('\n${'=' * 80}\n\n');
-          filename = 'akhi_chat_history_${DateTime.now().millisecondsSinceEpoch}.txt';
+          filename = 'nafs_ai_chat_history_${DateTime.now().millisecondsSinceEpoch}.txt';
       }
 
       await Share.shareXFiles(
@@ -606,7 +606,7 @@ class _SettingsPageState extends State<SettingsPage> {
           name: filename,
           mimeType: format == 'json' ? 'application/json' : 'text/plain',
         )],
-        subject: 'Akhi GPT Chat History Export',
+        subject: 'NafsAI Chat History Export',
       );
 
       if (mounted) {

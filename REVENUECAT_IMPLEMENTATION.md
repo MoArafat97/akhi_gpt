@@ -1,6 +1,6 @@
 # RevenueCat Subscription Implementation
 
-This document outlines the complete RevenueCat subscription service implementation for the Akhi GPT Flutter app.
+This document outlines the complete RevenueCat subscription service implementation for the NafsAI Flutter app.
 
 ## 🎯 Overview
 

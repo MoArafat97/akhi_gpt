@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-01-XX
+
+### 🎯 Application Rebranding: Complete Rename to NafsAI
+
+This release completes the application rebranding from "Akhi GPT" to "NafsAI" based on user feedback requesting proper app naming.
+
+#### Changed
+- **Application Name**: Complete rename from "Akhi GPT" to "NafsAI" across all platforms
+- **Package Identifiers**: Updated all bundle identifiers from `com.moarafat.akhi_gpt` to `com.moarafat.nafs_ai`
+- **Display Names**: Updated user-facing app names on all platforms (Android, iOS, web, desktop)
+- **Project Structure**: Updated project names and binary names across all platform configurations
+- **Documentation**: Updated all documentation, README, and configuration files
+- **Build Configuration**: Updated CI/CD workflows and build scripts for new naming
+
+#### Technical Details
+- Android: Updated namespace, applicationId, and package structure
+- iOS: Updated CFBundleDisplayName, CFBundleName, and PRODUCT_BUNDLE_IDENTIFIER
+- Web: Updated manifest.json and index.html with new app name
+- Desktop: Updated CMakeLists.txt for Linux, Windows, and macOS
+- Proxy: Updated HTTP headers and referer information
+
 ## [2.0.0] - 2025-01-XX
 
 ### 🎉 Major Release: Gender-Inclusive Companion System

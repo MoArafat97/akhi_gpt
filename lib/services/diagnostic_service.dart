@@ -21,8 +21,8 @@ class DiagnosticService {
       receiveTimeout: const Duration(seconds: 30),
       headers: {
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://akhi-gpt.app',
-        'X-Title': 'Akhi GPT Diagnostics',
+        'HTTP-Referer': 'https://nafs-ai.app',
+        'X-Title': 'NafsAI Diagnostics',
       },
     ));
 
