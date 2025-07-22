@@ -69,8 +69,8 @@ yarn-error.log*
 *.sw?
 
 # Secrets and keys
-DO_NOT_COMMIT__akhi_gpt_keystore_info.txt
-akhi-gpt-874296e18089.json
+DO_NOT_COMMIT__nafs_ai_keystore_info.txt
+nafs-ai-874296e18089.json
 keystore.b64
 play-key.b64
 release-key.jks
@@ -83,7 +83,7 @@ android/app/*.jks
 android/app/*.p12
 android/app/*.pfx
 upload-keystore.jks
-akhi_gpt_keystore.jks
+nafs_ai_keystore.jks
 
 # Service account and credential files
 *-service-account.json

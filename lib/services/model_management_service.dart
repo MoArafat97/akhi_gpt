@@ -70,8 +70,8 @@ class ModelManagementService {
         options: Options(
           headers: {
             'Authorization': 'Bearer $apiKey',
-            'HTTP-Referer': 'https://akhi-gpt.app',
-            'X-Title': 'Akhi GPT',
+            'HTTP-Referer': 'https://nafs-ai.app',
+            'X-Title': 'NafsAI',
           },
         ),
       );

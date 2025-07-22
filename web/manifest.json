@@ -1,11 +1,11 @@
 {
-    "name": "akhi_gpt",
-    "short_name": "akhi_gpt",
+    "name": "NafsAI",
+    "short_name": "NafsAI",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "NafsAI - Your supportive Muslim companion",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

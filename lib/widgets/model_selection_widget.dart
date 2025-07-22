@@ -261,8 +261,8 @@ class _ModelSelectionWidgetState extends State<ModelSelectionWidget> with Widget
         options: Options(
           headers: {
             'Authorization': 'Bearer $apiKey',
-            'HTTP-Referer': 'https://akhi-gpt.app',
-            'X-Title': 'Akhi GPT',
+            'HTTP-Referer': 'https://nafs-ai.app',
+            'X-Title': 'NafsAI',
           },
         ),
         data: {

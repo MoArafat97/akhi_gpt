@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.moarafat.akhi_gpt"
+    namespace = "com.moarafat.nafs_ai"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
@@ -30,7 +30,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.moarafat.akhi_gpt"
+        applicationId = "com.moarafat.nafs_ai"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 23  // Required for Isar database and fragment shaders
@@ -41,7 +41,7 @@ android {
 
     signingConfigs {
         create("release") {
-            val alias = System.getenv("ANDROID_KEY_ALIAS") ?: keystoreProperties.getProperty("keyAlias") ?: "akhi_gpt_key"
+            val alias = System.getenv("ANDROID_KEY_ALIAS") ?: keystoreProperties.getProperty("keyAlias") ?: "nafs_ai_key"
             val keyPass = System.getenv("ANDROID_KEY_PASSWORD") ?: keystoreProperties.getProperty("keyPassword")
             val storePass = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: keystoreProperties.getProperty("storePassword")
             val storeFilePath = keystoreProperties.getProperty("storeFile") ?: "keystore.jks"
@@ -80,7 +80,7 @@ android {
 // Helper function to check if keystore and required environment variables exist
 fun hasKeystoreAndEnvVars(): Boolean {
     val keystoreExists = file("keystore.jks").exists() ||
-                        file("akhi_gpt_keystore.jks").exists() ||
+                        file("nafs_ai_keystore.jks").exists() ||
                         file("upload-keystore.jks").exists()
 
     val envVarsExist = !System.getenv("ANDROID_KEY_ALIAS").isNullOrEmpty() &&

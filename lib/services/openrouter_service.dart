@@ -147,8 +147,8 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
           receiveTimeout: const Duration(seconds: 60),
           headers: {
             'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://akhi-gpt.app',
-            'X-Title': 'Akhi GPT',
+            'HTTP-Referer': 'https://nafs-ai.app',
+            'X-Title': 'NafsAI',
           },
         )),
         _proxyDio = _useProxy && _proxyEndpoint != null

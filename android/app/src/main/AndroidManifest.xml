@@ -3,12 +3,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:label="akhi_gpt"
+        android:label="NafsAI"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
         <activity
-            android:name="com.moarafat.akhi_gpt.MainActivity"
+            android:name="com.moarafat.nafs_ai.MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
