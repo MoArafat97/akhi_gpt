@@ -41,19 +41,45 @@ android {
 
     signingConfigs {
         create("release") {
-            val alias = System.getenv("ANDROID_KEY_ALIAS") ?: keystoreProperties.getProperty("keyAlias")
-            val keyPass = System.getenv("ANDROID_KEY_PASSWORD") ?: keystoreProperties.getProperty("keyPassword")
-            val storePass = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: keystoreProperties.getProperty("storePassword")
-            val storeFilePath = keystoreProperties.getProperty("storeFile") ?: "keystore.jks"
+            // Smart fallback strategy based on environment
+            val alias = System.getenv("ANDROID_KEY_ALIAS")
+                ?: keystoreProperties.getProperty("keyAlias")
+                ?: getDefaultKeyAlias()
 
-            // Ensure we have all required values including alias
+            val keyPass = System.getenv("ANDROID_KEY_PASSWORD")
+                ?: keystoreProperties.getProperty("keyPassword")
+
+            val storePass = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                ?: keystoreProperties.getProperty("storePassword")
+
+            val storeFilePath = keystoreProperties.getProperty("storeFile")
+                ?: findKeystoreFile()
+
+            // Ensure we have all required values
             if (alias != null && keyPass != null && storePass != null) {
                 keyAlias = alias
                 keyPassword = keyPass
                 storePassword = storePass
                 storeFile = file(storeFilePath)
+
+                println("✅ Using signing key alias: $alias")
             } else {
-                throw GradleException("Missing signing configuration. Please set environment variables or create key.properties file with keyAlias, keyPassword and storePassword.")
+                val missing = mutableListOf<String>()
+                if (alias == null) missing.add("keyAlias")
+                if (keyPass == null) missing.add("keyPassword")
+                if (storePass == null) missing.add("storePassword")
+
+                throw GradleException("""
+                    🔑 Missing signing configuration: ${missing.joinToString(", ")}
+
+                    Please provide credentials via:
+                    1. Environment variables: ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD, ANDROID_KEYSTORE_PASSWORD
+                    2. key.properties file with: keyAlias, keyPassword, storePassword
+
+                    Current search locations:
+                    - Environment variables: ${if (System.getenv("ANDROID_KEY_ALIAS") != null) "✅" else "❌"}
+                    - key.properties file: ${if (keystorePropertiesFile.exists()) "✅" else "❌"}
+                """.trimIndent())
             }
         }
     }
@@ -75,6 +101,48 @@ android {
             versionNameSuffix = "-debug"
         }
     }
+}
+
+// Smart helper functions for secure fallbacks
+fun getDefaultKeyAlias(): String? {
+    // Try to detect key alias from existing keystore files
+    val possibleKeystores = listOf("keystore.jks", "nafs_ai_keystore.jks", "upload-keystore.jks")
+
+    for (keystoreName in possibleKeystores) {
+        val keystoreFile = file(keystoreName)
+        if (keystoreFile.exists()) {
+            // Return a contextual alias based on app name and keystore
+            return when {
+                keystoreName.contains("nafs") -> "nafs_ai_key"
+                keystoreName.contains("akhi") -> "akhi_gpt_key"
+                else -> "release_key"
+            }
+        }
+    }
+
+    // Final fallback based on project name
+    return "nafs_ai_release_key"
+}
+
+fun findKeystoreFile(): String {
+    // Search for keystore files in order of preference
+    val possibleKeystores = listOf(
+        "keystore.jks",
+        "nafs_ai_keystore.jks",
+        "upload-keystore.jks",
+        "release-keystore.jks",
+        "app-release.keystore"
+    )
+
+    for (keystoreName in possibleKeystores) {
+        if (file(keystoreName).exists()) {
+            println("🔍 Found keystore: $keystoreName")
+            return keystoreName
+        }
+    }
+
+    // Default fallback
+    return "keystore.jks"
 }
 
 // Helper function to check if keystore and required environment variables exist
