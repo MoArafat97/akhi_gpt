@@ -6,7 +6,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/chat_message.dart';
 import '../utils/gender_util.dart';
-import 'user_api_key_service.dart';
 import 'model_management_service.dart';
 import '../config/personality_config.dart';
 

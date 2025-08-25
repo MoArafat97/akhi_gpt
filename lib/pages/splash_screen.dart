@@ -25,8 +25,8 @@ class _SplashScreenState extends State<SplashScreen> {
       // Always navigate directly to dashboard - backend API key is used
       Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (e) {
-      // On error, default to onboarding
-      Navigator.pushReplacementNamed(context, '/onboard1');
+      // On error, still go to dashboard
+      Navigator.pushReplacementNamed(context, '/dashboard');
     }
   }
 

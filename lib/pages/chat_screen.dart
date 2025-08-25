@@ -11,7 +11,6 @@ import '../services/terms_acceptance_service.dart';
 import '../utils/settings_util.dart';
 import '../utils/gender_util.dart';
 import '../utils/error_handler.dart';
-import 'chat_history_page.dart';
 // TESTING MODE: Subscription, message counter, and paywall imports temporarily disabled
 // import '../services/subscription_service.dart';
 // import '../services/message_counter_service.dart';
@@ -1188,15 +1187,13 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  /// Navigate to chat history page
+  /// Navigate to chat history page - Feature removed for minimal app structure
   void _navigateToChatHistory() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => ChatHistoryPage(
-          bgColor: widget.bgColor,
-          currentSessionId: _sessionId,
-          onSwitchToSession: _switchToChatSession,
-        ),
+    // Chat history page removed - show simple message instead
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Chat history feature is not available in this version'),
+        duration: Duration(seconds: 2),
       ),
     );
   }

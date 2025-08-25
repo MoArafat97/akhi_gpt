@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:encrypt/encrypt.dart';
+import 'package:encrypt/encrypt.dart' hide Key;
+import 'package:encrypt/encrypt.dart' as encrypt show Key;
 import 'package:flutter/foundation.dart';
 import '../utils/secure_logger.dart';
 
@@ -12,10 +13,10 @@ class EncryptionService {
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   static Encrypter? _encrypter;
-  static Key? _key;
+  static encrypt.Key? _key;
 
   /// Get or create encryption key from secure storage
-  static Future<Key> _getEncryptionKey() async {
+  static Future<encrypt.Key> _getEncryptionKey() async {
     if (_key != null) return _key!;
 
     try {
@@ -24,10 +25,10 @@ class EncryptionService {
       if (keyString != null) {
         // Decode existing key
         final keyBytes = base64Decode(keyString);
-        _key = Key(Uint8List.fromList(keyBytes));
+        _key = encrypt.Key(Uint8List.fromList(keyBytes));
       } else {
         // Generate new AES-256 key (32 bytes)
-        _key = Key.fromSecureRandom(32);
+        _key = encrypt.Key.fromSecureRandom(32);
         await _secureStorage.write(
           key: _encryptionKeyName,
           value: base64Encode(_key!.bytes)

@@ -16,7 +16,6 @@ import 'pages/chat_page.dart';
 import 'pages/dashboard.dart';
 import 'pages/settings_page.dart';
 import 'pages/splash_screen.dart';
-import 'pages/paywall_screen.dart';
 import 'services/settings_service.dart';
 
 /// Generate routes with developer mode protection
@@ -143,7 +142,6 @@ class MyApp extends StatelessWidget {
     '/chat': (context) => const ChatScreen(),
     '/chat_page': (context) => const ChatPage(),
     '/settings': (context) => const SettingsPage(),
-    '/paywall': (context) => const PaywallScreen(),
   };
 
   @override

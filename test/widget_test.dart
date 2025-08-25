@@ -8,8 +8,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:akhi_gpt/main.dart';
-import 'package:akhi_gpt/pages/onboarding/intro_page_six.dart';
-import 'package:akhi_gpt/pages/onboarding/intro_page_seven.dart';
 
 void main() {
   test('MyApp can be instantiated', () {

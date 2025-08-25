@@ -68,7 +68,6 @@ critical_paths:
   - 'lib/services/subscription_service.dart'
   - 'lib/services/encryption_service.dart'
   - 'lib/services/secure_config_service.dart'
-  - 'lib/services/user_api_key_service.dart'
   - 'lib/services/diagnostic_service.dart'
   - 'lib/utils/error_handler.dart'
 
@@ -76,4 +75,3 @@ critical_paths:
 security_critical:
   - 'lib/services/encryption_service.dart'
   - 'lib/services/secure_config_service.dart'
-  - 'lib/services/user_api_key_service.dart'
