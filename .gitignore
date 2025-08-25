@@ -102,3 +102,18 @@ GoogleService-Info.plist
 **/api-keys.txt
 **/tokens.txt
 **/secrets.txt
+
+# Security documentation and audit reports
+SECURITY_AUDIT_REPORT.md
+**/SECURITY_*.md
+**/security_*.md
+**/audit_*.md
+**/AUDIT_*.md
+**/*_SECURITY_*.md
+**/*_AUDIT_*.md
+
+# Sensitive documentation patterns
+**/sensitive_*.md
+**/SENSITIVE_*.md
+**/confidential_*.md
+**/CONFIDENTIAL_*.md
