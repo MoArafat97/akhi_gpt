@@ -5,8 +5,8 @@
     <application
         android:label="NafsAI"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon"
-        android:enableOnBackInvokedCallback="true">
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="false">
         <activity
             android:name="com.moarafat.nafs_ai.MainActivity"
             android:exported="true"

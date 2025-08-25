@@ -147,10 +147,11 @@ class HiveService {
 
       final histories = chatBox.values.toList();
 
-      // Decrypt message contents if needed
+      // Decrypt message contents if needed while preserving keys
       final decryptedHistories = <ChatHistory>[];
       for (final history in histories) {
-        decryptedHistories.add(await _decryptChatHistory(history));
+        final decrypted = await _decryptChatHistory(history);
+        decryptedHistories.add(decrypted);
       }
 
       // Sort by last updated (newest first)
@@ -380,20 +381,10 @@ class HiveService {
         return chatHistory;
       }
 
-      // Create new ChatHistory with decrypted contents
-      final decryptedHistory = ChatHistory.withDates(
-        sessionId: chatHistory.sessionId,
-        customCreatedAt: chatHistory.createdAt,
-        customLastUpdated: chatHistory.lastUpdated,
-        title: chatHistory.title,
-      );
+      // Modify the original object in place to preserve the key
+      chatHistory.messageContents = decryptedContents;
 
-      // Manually set the decrypted message data
-      decryptedHistory.messageRoles = List.from(chatHistory.messageRoles);
-      decryptedHistory.messageContents = decryptedContents;
-      decryptedHistory.messageTimestamps = List.from(chatHistory.messageTimestamps);
-
-      return decryptedHistory;
+      return chatHistory;
     } catch (e) {
       developer.log('Error decrypting chat history: $e', name: 'HiveService');
       return chatHistory; // Return original on error

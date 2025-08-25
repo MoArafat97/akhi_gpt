@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:developer' as developer;
-// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 import 'services/hive_service.dart';
-import 'services/openrouter_service.dart';
 import 'services/subscription_service.dart';
 import 'services/message_counter_service.dart';
 import 'services/secure_config_service.dart';
@@ -17,91 +16,102 @@ import 'pages/chat_history_page.dart';
 import 'pages/dashboard.dart';
 import 'pages/settings_page.dart';
 import 'pages/splash_screen.dart';
-import 'services/settings_service.dart';
+import 'pages/terms_conditions_page.dart';
+import 'animations/page_transitions.dart';
 
-/// Generate routes with developer mode protection
+/// ✨ GENERATE ROUTES with modern transitions and developer mode protection
 Route<dynamic>? _generateRoute(RouteSettings settings) {
-  final routeName = settings.name;
+  final String? routeName = settings.name;
 
-  final builder = MyApp.routes[routeName];
-  if (builder == null) {
-    return null; // Route not found
+  if (routeName == null) {
+    return null;
   }
 
-  return MaterialPageRoute(
-    builder: builder,
-    settings: settings,
-  );
+  Widget page;
+  switch (routeName) {
+    case '/dashboard':
+      page = const Dashboard();
+      break;
+    case '/chat':
+      page = const ChatScreen();
+      break;
+    case '/chat_page':
+      page = const ChatPage();
+      break;
+    case '/chat_history':
+      page = const ChatHistoryPage();
+      break;
+    case '/settings':
+      page = const SettingsPage();
+      break;
+    case '/terms_conditions':
+      // Check if this is view-only mode (from settings)
+      final isViewOnly = settings.arguments as bool? ?? false;
+      page = TermsConditionsPage(isViewOnly: isViewOnly);
+      break;
+    default:
+      return null;
+  }
+
+  // ✨ APPLY DIFFERENT TRANSITIONS based on route
+  switch (routeName) {
+    case '/chat':
+      return ModernPageTransitions.glassmorphicTransition(page, settings: RouteSettings(name: routeName));
+    case '/settings':
+      // Use our transition but ensure settings are attached
+      return ModernPageTransitions.slideTransition(page, settings: RouteSettings(name: routeName));
+    case '/chat_history':
+      return ModernPageTransitions.fadeTransition(page, settings: RouteSettings(name: routeName));
+    case '/terms_conditions':
+      return ModernPageTransitions.scaleTransition(page, settings: RouteSettings(name: routeName));
+    case '/onboard1':
+    case '/onboard2':
+    case '/onboard3':
+      return ModernPageTransitions.scaleTransition(page, settings: RouteSettings(name: routeName));
+    default:
+      return ModernPageTransitions.slideTransition(page, settings: RouteSettings(name: routeName));
+  }
 }
 
 void main() async {
-  print('🔥🔥🔥 MAIN FUNCTION STARTED 🔥🔥🔥');
   WidgetsFlutterBinding.ensureInitialized();
-  print('🔥 MAIN: Flutter binding initialized');
 
-  // Log debug configuration
+  // Log debug configuration only in debug mode
   if (DebugConfig.hasDebugFlags) {
-    print('🔧 DEBUG: Debug flags enabled: ${DebugConfig.debugStatus}');
+    developer.log('DEBUG: Debug flags enabled: ${DebugConfig.debugStatus}');
   }
 
   try {
-    print('🔥 MAIN: Attempting to load .env file...');
     await dotenv.load(fileName: ".env");
-    print('🔥 MAIN: .env file loaded successfully');
-    print('🔥 MAIN: Environment variables loaded: ${dotenv.env.keys.toList()}');
 
     // Enhanced configuration validation
     final apiKey = dotenv.env['OPENROUTER_API_KEY'];
-    print('🔥 MAIN: API Key: ${apiKey != null ? "✅ Found (${apiKey.length} chars)" : "❌ Not found"}');
-    if (apiKey != null) {
-      print('🔥 MAIN: API Key starts with: ${apiKey.substring(0, 10)}...');
-      print('🔥 MAIN: API Key format valid: ${apiKey.startsWith('sk-or-v1-') ? "✅" : "❌"}');
+    if (apiKey == null || apiKey.isEmpty || apiKey == 'your-openrouter-api-key-here') {
+      developer.log('WARNING: OpenRouter API key not configured properly');
     }
 
     // Validate models
     final defaultModel = dotenv.env['DEFAULT_MODEL'];
     final fallbackModels = dotenv.env['FALLBACK_MODELS'];
-    print('🔥 MAIN: Default Model: ${defaultModel ?? "❌ Not set"}');
-    print('🔥 MAIN: Fallback Models: ${fallbackModels ?? "❌ Not set"}');
-
-    if (fallbackModels != null) {
-      final models = fallbackModels.split(',').map((m) => m.trim()).toList();
-      print('🔥 MAIN: Fallback Models Count: ${models.length}');
-      print('🔥 MAIN: Fallback Models List: $models');
-    }
-
-    // Validate proxy configuration
-    final enableProxy = dotenv.env['ENABLE_PROXY'];
-    final proxyEndpoint = dotenv.env['PROXY_ENDPOINT'];
-    print('🔥 MAIN: Proxy Enabled: ${enableProxy ?? "false"}');
-    if (enableProxy?.toLowerCase() == 'true') {
-      print('🔥 MAIN: Proxy Endpoint: ${proxyEndpoint ?? "❌ Not set"}');
-    }
 
     // Quick validation check
     final isBasicConfigValid = apiKey != null &&
                               apiKey.isNotEmpty &&
-                              apiKey.startsWith('sk-or-v1-') &&
+                              apiKey != 'your-openrouter-api-key-here' &&
                               defaultModel != null &&
                               defaultModel.contains('/') &&
                               fallbackModels != null &&
                               fallbackModels.isNotEmpty;
 
-    print('🔥 MAIN: Basic Configuration Valid: ${isBasicConfigValid ? "✅" : "❌"}');
-
     if (!isBasicConfigValid) {
-      print('🔥 MAIN: ⚠️ Configuration issues detected - app may not function properly');
-      print('🔥 MAIN: ⚠️ Please check your .env file configuration');
+      developer.log('WARNING: Configuration issues detected - app may not function properly');
     }
 
     // Log secure configuration status
     SecureConfigService.instance.logConfigurationStatus();
 
   } catch (e) {
-    print('🔥 MAIN: ❌ Error loading .env: $e');
-    print('🔥 MAIN: Error type: ${e.runtimeType}');
-    print('🔥 MAIN: Error details: $e');
-    print('🔥 MAIN: ⚠️ App will start but may not function properly without proper configuration');
+    developer.log('ERROR: Failed to load .env configuration: $e');
   }
 
   try {
@@ -137,19 +147,11 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // Define route mappings
-  static final routes = <String, Widget Function(BuildContext)>{
-    '/dashboard': (context) => const Dashboard(),
-    '/chat': (context) => const ChatScreen(),
-    '/chat_page': (context) => const ChatPage(),
-    '/chat_history': (context) => const ChatHistoryPage(),
-    '/settings': (context) => const SettingsPage(),
-  };
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'NafsAI',
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.companionTheme,
       localizationsDelegates: const [
         // AppLocalizations.delegate,
@@ -162,7 +164,6 @@ class MyApp extends StatelessWidget {
       ],
       // ✨ NAVIGATION: Set SplashScreen as home to check gender preference
       home: const SplashScreen(),
-      routes: MyApp.routes,
       onGenerateRoute: _generateRoute,
     );
   }

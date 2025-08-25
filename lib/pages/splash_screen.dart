@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:developer' as developer;
+import '../services/terms_acceptance_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -22,11 +24,20 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     try {
-      // Always navigate directly to dashboard - backend API key is used
-      Navigator.pushReplacementNamed(context, '/dashboard');
+      // Check if user has accepted terms and conditions
+      final hasAcceptedTerms = await TermsAcceptanceService.hasAcceptedTerms();
+
+      if (hasAcceptedTerms) {
+        // User has accepted terms, navigate to dashboard
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      } else {
+        // User needs to accept terms first
+        Navigator.pushReplacementNamed(context, '/terms_conditions');
+      }
     } catch (e) {
-      // On error, still go to dashboard
-      Navigator.pushReplacementNamed(context, '/dashboard');
+      // On error, assume terms not accepted for safety
+      developer.log('Failed to check terms acceptance in splash: $e', name: 'SplashScreen');
+      Navigator.pushReplacementNamed(context, '/terms_conditions');
     }
   }
 
@@ -48,12 +59,11 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // App logo/icon placeholder
+              // App logo
               Container(
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF9C6644),
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
@@ -63,15 +73,19 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.chat_bubble_outline,
-                  size: 60,
-                  color: Colors.white,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(30),
+                  child: Image.asset(
+                    'images/nafs-ai.jpg',
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // App title
               Text(
                 'NafsAI',

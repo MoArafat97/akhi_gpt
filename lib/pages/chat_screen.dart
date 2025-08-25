@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:developer' as developer;
+import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/chat_message.dart';
 import '../models/chat_history.dart';
@@ -57,8 +58,11 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _sessionId;
   UserGender _userGender = UserGender.male; // Default, will be loaded from preferences
 
+  // Temporary session storage key for current chat
+  static const String _tempSessionKey = 'current_chat_session';
+
   // Connection status tracking
-  bool _isConnected = false;
+  bool _isConnected = true; // Start optimistically as connected
   bool _isCheckingConnection = false;
 
   // Aggression tracking variables
@@ -97,7 +101,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// Test OpenRouter connection on startup
   void _testConnection() async {
-    print('🔍 CHAT: _testConnection() method called!');
     developer.log('🔍 CHAT: Starting connection test...', name: 'ChatScreen');
 
     if (mounted) {
@@ -156,6 +159,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    // Save current session to temporary storage before disposing
+    _saveCurrentSessionTemporarily();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -191,12 +196,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // Check service configuration
     final isConfigured = await _openRouterService.isConfigured;
-    print('🔥 CHAT: Service configured: $isConfigured');
 
     if (!isConfigured) {
-      print('🔥 CHAT: ❌ Service not configured - user needs to set API key');
+      developer.log('Service not configured - user needs to set API key', name: 'ChatScreen');
     } else {
-      print('🔥 CHAT: ✅ Service is properly configured');
+      developer.log('Service is properly configured', name: 'ChatScreen');
     }
   }
 
@@ -510,11 +514,8 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     */
 
-    print('🧪 TESTING MODE: Skipping message limit checks and paywall navigation');
-
     // TESTING MODE: Message count increment disabled
     // await MessageCounterService.instance.incrementMessageCount();
-    print('🧪 TESTING MODE: Skipping message count increment');
 
     // Analyze message for emotional context and harmful content
     final analysis = _analyzeMessage(text);
@@ -558,7 +559,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       _messageController.clear();
       _scrollToBottom();
-      await _saveChatHistoryIfEnabled();
+      await _saveCurrentSessionTemporarily(); // Only save temporarily
       return;
     }
 
@@ -572,8 +573,8 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageController.clear();
     _scrollToBottom();
 
-    // Save immediately after user message
-    await _saveChatHistoryIfEnabled();
+    // Save temporarily after user message
+    await _saveCurrentSessionTemporarily();
 
     try {
       // Create assistant message placeholder
@@ -612,8 +613,15 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       });
 
-      // Save chat history if enabled
-      await _saveChatHistoryIfEnabled();
+      // Save temporarily after receiving response
+      await _saveCurrentSessionTemporarily();
+
+      // Update connection status to connected since we successfully received a response
+      if (mounted && !_isConnected) {
+        setState(() {
+          _isConnected = true;
+        });
+      }
 
     } catch (e) {
       // Handle error gracefully - the OpenRouterService now handles fallbacks internally
@@ -640,6 +648,12 @@ class _ChatScreenState extends State<ChatScreen> {
         errorMessage = 'The AI service is experiencing high demand right now, ${_userGender.casualAddress}. I\'m trying alternative models, but please be patient. 🤲';
       } else if (errorString.contains('network') || errorString.contains('connection')) {
         errorMessage = 'Having trouble connecting to the AI service, ${_userGender.casualAddress}. Please check your internet connection and try again. 📶';
+        // Update connection status to offline for network/connection errors
+        if (mounted) {
+          setState(() {
+            _isConnected = false;
+          });
+        }
       } else if (errorString.contains('timeout')) {
         errorMessage = 'The request is taking longer than expected, ${_userGender.casualAddress}. Please try again with a shorter message. ⏱️';
       } else if (errorString.contains('401') || errorString.contains('unauthorized')) {
@@ -847,9 +861,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             _navigateToChatHistory();
                             break;
                           case 'refresh':
-                            setState(() {
-                              // Refresh the UI
-                            });
+                            _clearChatWithoutDialog();
                             break;
                           case 'delete':
                             _showClearChatDialog();
@@ -964,13 +976,19 @@ class _ChatScreenState extends State<ChatScreen> {
                               ),
                             ),
                             const SizedBox(height: 24),
-                            Text(
-                              'Hey friend! 👋',
-                              style: GoogleFonts.lexend(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF8B5A3C),
-                              ),
+                            FutureBuilder<String>(
+                              future: GenderUtil.getCompanionName(),
+                              builder: (context, snapshot) {
+                                final companionName = snapshot.data ?? 'friend';
+                                return Text(
+                                  'Hey ${companionName.toLowerCase()}! 👋',
+                                  style: GoogleFonts.lexend(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF8B5A3C),
+                                  ),
+                                );
+                              },
                             ),
                             const SizedBox(height: 8),
                             Text(
@@ -1202,9 +1220,65 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  /// Save current session to temporary storage (not permanent)
+  Future<void> _saveCurrentSessionTemporarily() async {
+    try {
+      if (_messages.isEmpty) return;
+
+      final sessionData = {
+        'sessionId': _sessionId ?? 'temp_${DateTime.now().millisecondsSinceEpoch}',
+        'messages': _messages.map((msg) => {
+          'role': msg.role,
+          'content': msg.content,
+          'timestamp': msg.timestamp.millisecondsSinceEpoch,
+        }).toList(),
+        'lastUpdated': DateTime.now().millisecondsSinceEpoch,
+      };
+
+      await setString(_tempSessionKey, jsonEncode(sessionData));
+      developer.log('Saved current session temporarily', name: 'ChatScreen');
+    } catch (e) {
+      developer.log('Failed to save temporary session: $e', name: 'ChatScreen');
+    }
+  }
+
+  /// Load temporary session if available
+  Future<void> _loadTemporarySession() async {
+    try {
+      final sessionJson = await getString(_tempSessionKey, '');
+      if (sessionJson.isEmpty) return;
+
+      final sessionData = jsonDecode(sessionJson) as Map<String, dynamic>;
+      final messagesList = sessionData['messages'] as List<dynamic>;
+
+      final messages = messagesList.map((msgData) => ChatMessage(
+        role: msgData['role'] as String,
+        content: msgData['content'] as String,
+        timestamp: DateTime.fromMillisecondsSinceEpoch(msgData['timestamp'] as int),
+      )).toList();
+
+      setState(() {
+        _messages.clear();
+        _messages.addAll(messages);
+        _sessionId = sessionData['sessionId'] as String;
+      });
+
+      developer.log('Loaded temporary session: $_sessionId with ${_messages.length} messages', name: 'ChatScreen');
+      _scrollToBottom();
+    } catch (e) {
+      developer.log('Failed to load temporary session: $e', name: 'ChatScreen');
+      // Fall back to loading from permanent storage
+      await _loadChatHistoryIfEnabled();
+    }
+  }
+
   /// Load chat history from persistent storage if enabled
   Future<void> _loadChatHistoryIfEnabled() async {
     try {
+      // First try to load temporary session
+      await _loadTemporarySession();
+      if (_messages.isNotEmpty) return;
+
       // Check if chat history saving is enabled
       final savingEnabled = await getBool('saveChatHistory', true);
       if (!savingEnabled) {
@@ -1336,6 +1410,9 @@ class _ChatScreenState extends State<ChatScreen> {
         developer.log('Manually saved new chat history: $_sessionId', name: 'ChatScreen');
       }
 
+      // Clear temporary session after successful permanent save
+      await setString(_tempSessionKey, '');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1436,6 +1513,34 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  /// Clear chat immediately without confirmation dialog (for refresh button)
+  Future<void> _clearChatWithoutDialog() async {
+    try {
+      final savingEnabled = await getBool('saveChatHistory', true);
+      await _clearChat(savingEnabled);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Chat cleared'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      developer.log('Failed to clear chat: $e', name: 'ChatScreen');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to clear chat: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   /// Show dialog to confirm clearing chat history
   void _showClearChatDialog() async {
     final savingEnabled = await getBool('saveChatHistory', true);
@@ -1476,11 +1581,14 @@ class _ChatScreenState extends State<ChatScreen> {
       developer.log('=== VERBOSE: _clearChat started ===', name: 'ChatScreen');
       developer.log('VERBOSE: savingEnabled = $savingEnabled, sessionId = $_sessionId', name: 'ChatScreen');
       
-      // Clear in-memory messages
+      // Clear in-memory messages and temporary session
       setState(() {
         _messages.clear();
       });
-      developer.log('VERBOSE: In-memory messages cleared', name: 'ChatScreen');
+
+      // Clear temporary session storage
+      await setString(_tempSessionKey, '');
+      developer.log('VERBOSE: In-memory messages and temporary session cleared', name: 'ChatScreen');
 
       // If saving is enabled, also delete from storage
       if (savingEnabled && _sessionId != null) {

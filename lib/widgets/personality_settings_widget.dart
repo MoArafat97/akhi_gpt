@@ -205,8 +205,8 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const ListTile(
-        leading: Icon(Icons.psychology, color: Color(0xFFFCF8F1)),
-        title: Text('Personality Style', style: TextStyle(color: Color(0xFFFCF8F1))),
+        leading: Icon(Icons.psychology, color: Color(0xFF8B5A3C)),
+        title: Text('Personality Style', style: TextStyle(color: Color(0xFF8B5A3C))),
         trailing: CircularProgressIndicator(),
       );
     }
@@ -215,25 +215,25 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
       children: [
         // Companion type selection
         ListTile(
-          leading: const Icon(Icons.person, color: Color(0xFFFCF8F1)),
-          title: const Text('Companion Type', style: TextStyle(color: Color(0xFFFCF8F1))),
+          leading: const Icon(Icons.person, color: Color(0xFF8B5A3C)),
+          title: const Text('Companion Type', style: TextStyle(color: Color(0xFF8B5A3C))),
           subtitle: Text(
             _userGender.displayName,
-            style: const TextStyle(color: Color(0xFFFCF8F1)),
+            style: const TextStyle(color: Color(0xFF666666)),
           ),
-          trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFFFCF8F1), size: 16),
+          trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF8B5A3C), size: 16),
           onTap: () => _showCompanionTypeDialog(),
         ),
 
         // Main toggle switch
         ListTile(
-          leading: const Icon(Icons.psychology, color: Color(0xFFFCF8F1)),
-          title: const Text('Personality Style', style: TextStyle(color: Color(0xFFFCF8F1))),
+          leading: const Icon(Icons.psychology, color: Color(0xFF8B5A3C)),
+          title: const Text('Personality Style', style: TextStyle(color: Color(0xFF8B5A3C))),
           subtitle: Text(
             _isPersonalityEnabled
                 ? 'Using ${_selectedStyle.displayName}'
                 : 'Using Simple Modern English',
-            style: const TextStyle(color: Color(0xFFFCF8F1)),
+            style: const TextStyle(color: Color(0xFF666666)),
           ),
           trailing: Switch(
             value: _isPersonalityEnabled,
@@ -257,7 +257,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
                 const Text(
                   'Choose Style:',
                   style: TextStyle(
-                    color: Color(0xFFFCF8F1),
+                    color: Color(0xFF8B5A3C),
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
@@ -305,7 +305,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
             children: [
               Icon(
                 isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                color: isSelected ? Color(0xFFFCF8F1) : Color(0xFFFCF8F1),
+                color: isSelected ? Color(0xFF8B5A3C) : Color(0xFF8B5A3C),
                 size: 20,
               ),
               const SizedBox(width: 12),
@@ -319,7 +319,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
                           style.displayName,
                           style: TextStyle(
                             color: hasAccess
-                                ? (isSelected ? Color(0xFFFCF8F1) : Color(0xFFFCF8F1))
+                                ? (isSelected ? Color(0xFF8B5A3C) : Color(0xFF8B5A3C))
                                 : Color(0xFF999999),
                             fontSize: 16,
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -342,7 +342,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
                       _getStyleDescription(style), // isPremium && !SubscriptionService.instance.isPremium ? 'Premium required' :
                       style: TextStyle(
                         color: hasAccess
-                            ? (isSelected ? Color(0xFFFCF8F1) : Color(0xFFFCF8F1))
+                            ? (isSelected ? Color(0xFF666666) : Color(0xFF666666))
                             : Colors.amber.withOpacity(0.8),
                         fontSize: 12,
                         // TESTING MODE: Always use normal font style

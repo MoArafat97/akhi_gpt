@@ -4,24 +4,42 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:ui';
 import 'dart:developer' as developer;
 import '../utils/settings_util.dart';
 import '../utils/gender_util.dart';
 import '../services/hive_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/personality_settings_widget.dart';
-import '../widgets/subscription_status_widget.dart';
+import '../widgets/modern_ui_components.dart';
+import '../theme/app_theme.dart';
+import 'terms_conditions_page.dart';
+
 
 class SettingsPage extends StatefulWidget {
   final Color bgColor;
 
-  const SettingsPage({super.key, this.bgColor = const Color(0xFFB7AFA3)});
+  const SettingsPage({super.key, this.bgColor = const Color(0xFFFCF8F1)});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  void _backToDashboard() {
+    final nav = Navigator.of(context, rootNavigator: true);
+    var reachedDashboard = false;
+    nav.popUntil((route) {
+      if (route.settings.name == '/dashboard') {
+        reachedDashboard = true;
+        return true;
+      }
+      return false;
+    });
+    if (!reachedDashboard) {
+      nav.pushReplacementNamed('/dashboard');
+    }
+  }
   static const _secure = FlutterSecureStorage();
   final _hiveService = HiveService.instance;
 
@@ -74,7 +92,7 @@ class _SettingsPageState extends State<SettingsPage> {
           SnackBar(
             content: Text(
               newState ? 'Developer mode enabled' : 'Developer mode disabled',
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: Color(0xFF8B5A3C)), // Changed to earthy brown
             ),
             backgroundColor: newState ? Colors.green : Colors.orange,
             duration: const Duration(seconds: 2),
@@ -87,109 +105,158 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: widget.bgColor,
+      // ✨ STANDARD APPBAR with simple back navigation
       appBar: AppBar(
-        backgroundColor: widget.bgColor.withValues(alpha: 0.9),
+        backgroundColor: const Color(0xFFFCF8F1),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF8B5A3C)),
+          onPressed: _backToDashboard,
+        ),
         title: GestureDetector(
           onTap: _handleSecretTap,
-          child: const Text(
+          child: Text(
             'Settings',
-            style: TextStyle(
-              color: Color(0xFF424242), // Dark gray for consistency
-              fontWeight: FontWeight.w600,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              color: const Color(0xFF8B5A3C),
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.3,
             ),
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        centerTitle: false,
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        children: [
-
-
-          // Profile Section
-          _SectionHeader('Profile'),
-          const PersonalitySettingsWidget(),
-
-          // Chat Preferences Section
-          _SectionHeader('Chat Preferences'),
-          _SwitchTile('Streaming responses', 'streaming', defaultOn: true),
-          _SaveChatHistorySwitchTile(),
-          _SwitchTile('Encrypt saved chats', 'encryptChats', defaultOn: true),
-          _ChatHistoryTile(),
-
-          // Subscription Section - Moved down as it's not essential for basic functionality
-          _SectionHeader('Subscription'),
-          const SubscriptionStatusWidget(),
-
-          // Other Settings
-          _SectionHeader('Journal'),
-          _DropdownTile('Autosave', 'autosave',
-            ['Live', '30 s', 'On save'], defaultVal: 'Live'),
-
-          _SectionHeader('Safety'),
-          _SwitchTile('Show crisis info cards', 'crisis', defaultOn: true),
-
-          _SectionHeader('Appearance'),
-          _SwitchTile('Cream theme', 'creamTheme', defaultOn: true),
-
-          _SectionHeader('About'),
-          ListTile(
-            title: const Text('Privacy Policy', style: TextStyle(color: Color(0xFF424242))),
-            subtitle: const Text('All data stays on your device.', style: TextStyle(color: Color(0xFF666666))),
+      // ✨ MODERN BACKGROUND with original colors
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFFCF8F1), // Original top cream
+              Color(0xFFE8E0D8), // Original bottom darker cream
+            ],
           ),
-          ListTile(
-            title: const Text('App Version', style: TextStyle(color: Color(0xFF424242))),
-            subtitle: FutureBuilder(
-              future: PackageInfo.fromPlatform(),
-              builder: (_, snap) => Text(
-                snap.hasData ? snap.data!.version : '...',
-                style: const TextStyle(color: Color(0xFF666666)),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+
+              // ✨ ENHANCED CONTENT with generous spacing
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  children: [
+                    const SizedBox(height: 8),
+
+                    // ✨ PROFILE SECTION with modern card
+                    _SectionHeader('Profile'),
+                    _buildModernCard([
+                      const PersonalitySettingsWidget(),
+                    ]),
+
+                    // ✨ CHAT PREFERENCES SECTION with modern card
+                    _SectionHeader('Chat Preferences'),
+                    _buildModernCard([
+                      _SwitchTile('Streaming responses', 'streaming', defaultOn: true),
+                      _SaveChatHistorySwitchTile(),
+                      _SwitchTile('Encrypt saved chats', 'encryptChats', defaultOn: true),
+                      _ChatHistoryTile(),
+                    ]),
+
+                    // ✨ SAFETY SECTION with modern card
+                    _SectionHeader('Safety'),
+                    _buildModernCard([
+                      _SwitchTile('Show crisis info cards', 'crisis', defaultOn: true),
+                    ]),
+
+                    // ✨ APPEARANCE SECTION with modern card
+                    _SectionHeader('Appearance'),
+                    _buildModernCard([
+                      _SwitchTile('Cream theme', 'creamTheme', defaultOn: true),
+                    ]),
+
+                    // ✨ ABOUT SECTION with modern card
+                    _SectionHeader('About'),
+                    _buildModernCard([
+                      ListTile(
+                        leading: const Icon(Icons.description_outlined, color: Color(0xFF8B5A3C)),
+                        title: const Text('Terms & Conditions', style: TextStyle(color: Color(0xFF8B5A3C))),
+                        subtitle: const Text('View app terms and privacy policy', style: TextStyle(color: Color(0xFF666666))),
+                        trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF8B5A3C), size: 16),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/terms_conditions',
+                            arguments: true, // isViewOnly = true
+                          );
+                        },
+                      ),
+                      ListTile(
+                        title: const Text('App Version', style: TextStyle(color: Color(0xFF8B5A3C))),
+                        subtitle: FutureBuilder(
+                          future: PackageInfo.fromPlatform(),
+                          builder: (_, snap) => Text(
+                            snap.hasData ? snap.data!.version : '...',
+                            style: const TextStyle(color: Color(0xFF666666)),
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      ),
+                    ]),
+
+                    // ✨ DEVELOPER SECTION with modern card (only show when enabled)
+                    if (_isDeveloperMode) ...[
+                      _SectionHeader('Developer'),
+                      _buildModernCard([
+                        ListTile(
+                          leading: const Icon(Icons.play_circle_outline, color: Color(0xFF8B5A3C)),
+                          title: const Text('Test Onboarding Flow', style: TextStyle(color: Color(0xFF8B5A3C))),
+                          subtitle: const Text('Replay the onboarding experience', style: TextStyle(color: Color(0xFF666666))),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          onTap: () async {
+                            if (await SettingsService.canAccessDeveloperRoute('/onboard1')) {
+                              Navigator.pushNamed(context, '/onboard1');
+                            }
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.bug_report, color: Color(0xFF8B5A3C)),
+                          title: const Text('API Diagnostics', style: TextStyle(color: Color(0xFF8B5A3C))),
+                          subtitle: const Text('Test API connectivity and configuration', style: TextStyle(color: Color(0xFF666666))),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          onTap: () async {
+                            if (await SettingsService.canAccessDeveloperRoute('/diagnostics')) {
+                              Navigator.pushNamed(context, '/diagnostics');
+                            }
+                          },
+                        ),
+                      ]),
+                    ],
+
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
-
-          // Developer section - only show when developer mode is enabled
-          if (_isDeveloperMode) ...[
-            _SectionHeader('Developer'),
-            ListTile(
-              leading: const Icon(Icons.play_circle_outline, color: Color(0xFF424242)),
-              title: const Text('Test Onboarding Flow', style: TextStyle(color: Color(0xFF424242))),
-              subtitle: const Text('Replay the onboarding experience', style: TextStyle(color: Color(0xFF666666))),
-              onTap: () async {
-                if (await SettingsService.canAccessDeveloperRoute('/onboard1')) {
-                  Navigator.pushNamed(context, '/onboard1');
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.bug_report, color: Color(0xFF424242)),
-              title: const Text('API Diagnostics', style: TextStyle(color: Color(0xFF424242))),
-              subtitle: const Text('Test API connectivity and configuration', style: TextStyle(color: Color(0xFF666666))),
-              onTap: () async {
-                if (await SettingsService.canAccessDeveloperRoute('/diagnostics')) {
-                  Navigator.pushNamed(context, '/diagnostics');
-                }
-              },
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
 
+  // ✨ MODERN SECTION HEADER with enhanced typography
   Widget _SectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(0, 32, 0, 16),
       child: Text(
         title,
         style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF424242), // Dark gray for better contrast
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF8B5A3C),
+          letterSpacing: -0.2,
         ),
       ),
     );
@@ -197,20 +264,22 @@ class _SettingsPageState extends State<SettingsPage> {
 
 
 
+  // ✨ MODERN SWITCH TILE with enhanced padding
   Widget _SwitchTile(String title, String key, {bool defaultOn = false}) {
     return FutureBuilder<bool>(
       future: getBool(key, defaultOn),
       builder: (context, snapshot) {
         final value = snapshot.data ?? defaultOn;
         return SwitchListTile(
-          title: Text(title, style: const TextStyle(color: Color(0xFF424242))),
+          title: Text(title, style: const TextStyle(color: Color(0xFF8B5A3C))),
           value: value,
           onChanged: (newValue) {
             setBool(key, newValue);
             setState(() {});
           },
-          activeColor: Colors.white,
-          inactiveThumbColor: Colors.white54,
+          activeColor: const Color(0xFF9C6644),
+          inactiveThumbColor: const Color(0xFF8B5A3C).withValues(alpha: 0.5),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         );
       },
     );
@@ -222,7 +291,7 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (context, snapshot) {
         final value = snapshot.data ?? defaultVal;
         return ListTile(
-          title: Text(title, style: const TextStyle(color: Color(0xFF424242))),
+          title: Text(title, style: const TextStyle(color: Color(0xFF8B5A3C))), // Changed to earthy brown
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -236,40 +305,10 @@ class _SettingsPageState extends State<SettingsPage> {
                   setDouble(key, newValue);
                   setState(() {});
                 },
-                activeColor: Colors.white,
-                inactiveColor: Colors.white54,
+                activeColor: const Color(0xFF9C6644), // Changed to warm brown
+                inactiveColor: const Color(0xFF8B5A3C).withValues(alpha: 0.5), // Changed to earthy brown
               ),
             ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _DropdownTile(String title, String key, List<String> options, {String defaultVal = ''}) {
-    return FutureBuilder<String>(
-      future: getString(key, defaultVal),
-      builder: (context, snapshot) {
-        final value = snapshot.data ?? defaultVal;
-        return ListTile(
-          title: Text(title, style: const TextStyle(color: Color(0xFF424242))),
-          subtitle: DropdownButton<String>(
-            value: options.contains(value) ? value : defaultVal,
-            dropdownColor: widget.bgColor,
-            style: const TextStyle(color: Color(0xFF424242)),
-            underline: Container(height: 1, color: Colors.white54),
-            items: options.map((String option) {
-              return DropdownMenuItem<String>(
-                value: option,
-                child: Text(option, style: const TextStyle(color: Color(0xFF424242))),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                setString(key, newValue);
-                setState(() {});
-              }
-            },
           ),
         );
       },
@@ -282,7 +321,7 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (context, snapshot) {
         final hasKey = snapshot.data?.isNotEmpty == true;
         return ListTile(
-          title: Text(title, style: const TextStyle(color: Color(0xFF424242))),
+          title: Text(title, style: const TextStyle(color: Color(0xFF8B5A3C))), // Changed to earthy brown
           subtitle: Text(
             hasKey ? '••••••••••••••••' : 'Not set',
             style: const TextStyle(color: Color(0xFF666666)),
@@ -291,12 +330,12 @@ class _SettingsPageState extends State<SettingsPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                icon: const Icon(Icons.edit, color: Colors.white),
+                icon: const Icon(Icons.edit, color: Color(0xFF8B5A3C)), // Changed to earthy brown
                 onPressed: () => _editSecureKey(title, key),
               ),
               if (hasKey)
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.white),
+                  icon: const Icon(Icons.delete, color: Color(0xFF8B5A3C)), // Changed to earthy brown
                   onPressed: () => _deleteSecureKey(key),
                 ),
             ],
@@ -312,19 +351,19 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: widget.bgColor,
-        title: Text('Edit $title', style: const TextStyle(color: Color(0xFF424242))),
+        title: Text('Edit $title', style: const TextStyle(color: Color(0xFF8B5A3C))), // Changed to earthy brown
         content: TextField(
           controller: controller,
           obscureText: true,
-          style: const TextStyle(color: Color(0xFF424242)),
+          style: const TextStyle(color: Color(0xFF8B5A3C)), // Changed to earthy brown
           decoration: InputDecoration(
             hintText: 'Enter API key',
             hintStyle: const TextStyle(color: Color(0xFF666666)),
-            enabledBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.white54),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: const Color(0xFF8B5A3C).withValues(alpha: 0.5)),
             ),
             focusedBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.white),
+              borderSide: BorderSide(color: Color(0xFF8B5A3C)),
             ),
           ),
         ),
@@ -341,7 +380,7 @@ class _SettingsPageState extends State<SettingsPage> {
               }
               Navigator.pop(context);
             },
-            child: const Text('Save', style: TextStyle(color: Color(0xFF424242))),
+            child: const Text('Save', style: TextStyle(color: Color(0xFF8B5A3C))), // Changed to earthy brown
           ),
         ],
       ),
@@ -353,10 +392,10 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: widget.bgColor,
-        title: const Text('Delete API Key', style: TextStyle(color: Color(0xFF424242))),
+        title: const Text('Delete API Key', style: TextStyle(color: Color(0xFF8B5A3C))), // Changed to earthy brown
         content: const Text(
           'Are you sure you want to delete this API key?',
-          style: TextStyle(color: Color(0xFF424242)),
+          style: TextStyle(color: Color(0xFF8B5A3C)), // Changed to earthy brown
         ),
         actions: [
           TextButton(
@@ -382,7 +421,7 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (context, snapshot) {
         final value = snapshot.data ?? true;
         return SwitchListTile(
-          title: const Text('Save chat history', style: TextStyle(color: Color(0xFF424242))),
+          title: const Text('Save chat history', style: TextStyle(color: Color(0xFF8B5A3C))), // Changed to earthy brown
           value: value,
           onChanged: (newValue) async {
             await setBool('saveChatHistory', newValue);
@@ -406,8 +445,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
             setState(() {});
           },
-          activeColor: Colors.white,
-          inactiveThumbColor: Colors.white54,
+          activeColor: const Color(0xFF9C6644), // Changed to warm brown
+          inactiveThumbColor: const Color(0xFF8B5A3C).withValues(alpha: 0.5), // Changed to earthy brown
         );
       },
     );
@@ -431,18 +470,18 @@ class _SettingsPageState extends State<SettingsPage> {
             return ExpansionTile(
               title: Text(
                 'Chat History Management',
-                style: const TextStyle(color: Color(0xFF424242)),
+                style: const TextStyle(color: Color(0xFF8B5A3C)), // Changed to earthy brown
               ),
               subtitle: Text(
                 '$count saved conversations',
                 style: const TextStyle(color: Color(0xFF666666)),
               ),
-              iconColor: Color(0xFF424242),
-              collapsedIconColor: Color(0xFF424242),
+              iconColor: const Color(0xFF8B5A3C), // Changed to earthy brown
+              collapsedIconColor: const Color(0xFF8B5A3C), // Changed to earthy brown
               children: [
                 ListTile(
-                  leading: const Icon(Icons.download, color: Color(0xFF424242)),
-                  title: const Text('Export All Chats', style: TextStyle(color: Color(0xFF424242))),
+                  leading: const Icon(Icons.download, color: Color(0xFF8B5A3C)), // Changed to earthy brown
+                  title: const Text('Export All Chats', style: TextStyle(color: Color(0xFF8B5A3C))), // Changed to earthy brown
                   subtitle: const Text('Export as JSON, TXT, or Markdown', style: TextStyle(color: Color(0xFF666666))),
                   onTap: () => _showExportDialog(),
                 ),
@@ -465,10 +504,10 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: widget.bgColor,
-        title: const Text('Export Chat History', style: TextStyle(color: Color(0xFF424242))),
+        title: const Text('Export Chat History', style: TextStyle(color: Color(0xFF8B5A3C))), // Changed to earthy brown
         content: const Text(
           'Choose export format:',
-          style: TextStyle(color: Color(0xFF424242)),
+          style: TextStyle(color: Color(0xFF8B5A3C)), // Changed to earthy brown
         ),
         actions: [
           TextButton(
@@ -476,21 +515,21 @@ class _SettingsPageState extends State<SettingsPage> {
               Navigator.pop(context);
               _exportChats('json');
             },
-            child: const Text('JSON', style: TextStyle(color: Color(0xFF424242))),
+            child: const Text('JSON', style: TextStyle(color: Color(0xFF8B5A3C))), // Changed to earthy brown
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _exportChats('txt');
             },
-            child: const Text('Text', style: TextStyle(color: Color(0xFF424242))),
+            child: const Text('Text', style: TextStyle(color: Color(0xFF8B5A3C))), // Changed to earthy brown
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _exportChats('md');
             },
-            child: const Text('Markdown', style: TextStyle(color: Color(0xFF424242))),
+            child: const Text('Markdown', style: TextStyle(color: Color(0xFF8B5A3C))), // Changed to earthy brown
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -559,10 +598,10 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: widget.bgColor,
-        title: const Text('Delete All Chat History', style: TextStyle(color: Color(0xFF424242))),
+        title: const Text('Delete All Chat History', style: TextStyle(color: Color(0xFF8B5A3C))), // Changed to earthy brown
         content: const Text(
           'This will permanently delete all saved conversations. This action cannot be undone.',
-          style: TextStyle(color: Color(0xFF424242)),
+          style: TextStyle(color: Color(0xFF8B5A3C)), // Changed to earthy brown
         ),
         actions: [
           TextButton(
@@ -613,11 +652,11 @@ class _SettingsPageState extends State<SettingsPage> {
         return ListTile(
           leading: Icon(
             Icons.person,
-            color: Color(0xFF424242).withValues(alpha: 0.8),
+            color: const Color(0xFF8B5A3C).withValues(alpha: 0.8), // Changed to earthy brown
           ),
           title: const Text(
             'Companion Type',
-            style: TextStyle(color: Color(0xFF424242), fontWeight: FontWeight.w500),
+            style: TextStyle(color: Color(0xFF8B5A3C), fontWeight: FontWeight.w500), // Changed to earthy brown
           ),
           subtitle: Text(
             currentGender.displayName,
@@ -625,7 +664,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           trailing: Icon(
             Icons.arrow_forward_ios,
-            color: Colors.white.withValues(alpha: 0.6),
+            color: const Color(0xFF8B5A3C).withValues(alpha: 0.6), // Changed to earthy brown
             size: 16,
           ),
           onTap: () => _showGenderSelectionDialog(currentGender),
@@ -643,7 +682,7 @@ class _SettingsPageState extends State<SettingsPage> {
           backgroundColor: const Color(0xFF2D2D2D),
           title: const Text(
             'Choose Your Companion',
-            style: TextStyle(color: Color(0xFF424242), fontWeight: FontWeight.w600),
+            style: TextStyle(color: Color(0xFF8B5A3C), fontWeight: FontWeight.w600), // Changed to earthy brown
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -711,7 +750,7 @@ class _SettingsPageState extends State<SettingsPage> {
           border: Border.all(
             color: isSelected
               ? const Color(0xFF9C6644)
-              : Colors.white24,
+              : const Color(0xFF8B5A3C).withValues(alpha: 0.2), // Changed to earthy brown
           ),
           borderRadius: BorderRadius.circular(12),
         ),
@@ -730,7 +769,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Text(
                     title,
                     style: TextStyle(
-                      color: isSelected ? const Color(0xFF9C6644) : const Color(0xFF424242),
+                      color: isSelected ? const Color(0xFF9C6644) : const Color(0xFF8B5A3C), // Changed to earthy brown
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
@@ -785,5 +824,37 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       }
     }
+  }
+
+
+
+  // ✨ MODERN CARD BUILDER with glassmorphism
+  Widget _buildModernCard(List<Widget> children) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: AnimatedCard(
+        borderRadius: 16,
+        color: Colors.white.withValues(alpha: 0.8),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        margin: EdgeInsets.zero,
+        child: Column(
+          children: children.map((child) {
+            return Container(
+              decoration: BoxDecoration(
+                border: children.indexOf(child) != children.length - 1
+                    ? const Border(
+                        bottom: BorderSide(
+                          color: Color(0xFFE8E0D8),
+                          width: 0.5,
+                        ),
+                      )
+                    : null,
+              ),
+              child: child,
+            );
+          }).toList(),
+        ),
+      ),
+    );
   }
 }
