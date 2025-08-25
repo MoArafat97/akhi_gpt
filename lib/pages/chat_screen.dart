@@ -692,53 +692,68 @@ class _ChatScreenState extends State<ChatScreen> {
   /// Build connection status indicator
   Widget _buildConnectionStatus() {
     if (_isCheckingConnection) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 12,
-            height: 12,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                const Color(0xFFFCF8F1).withValues(alpha: 0.7),
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFCF8F1).withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  Color(0xFFFCF8F1),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            'Checking connection...',
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              color: const Color(0xFFFCF8F1).withValues(alpha: 0.7),
+            const SizedBox(width: 6),
+            Text(
+              'Checking connection...',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: const Color(0xFFFCF8F1),
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
-    final statusColor = _isConnected ? Colors.green : Colors.red;
+    final statusColor = _isConnected ? const Color(0xFF4CAF50) : const Color(0xFFF44336);
     final statusIcon = _isConnected ? Icons.wifi : Icons.wifi_off;
     final statusText = _isConnected ? 'Connected' : 'Offline';
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          statusIcon,
-          size: 12,
-          color: statusColor,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          statusText,
-          style: GoogleFonts.inter(
-            fontSize: 11,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            statusIcon,
+            size: 14,
             color: statusColor,
-            fontWeight: FontWeight.w500,
           ),
-        ),
-      ],
+          const SizedBox(width: 6),
+          Text(
+            statusText,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: statusColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -779,24 +794,24 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✨ FEATURE: Background color inherited from card
-      backgroundColor: widget.bgColor,
+      // ✨ FEATURE: Cream background
+      backgroundColor: const Color(0xFFFCF8F1), // Always cream background
       body: SafeArea(
         child: Column(
             children: [
               // ✨ HEADER: Chat title and model info
               Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: widget.bgColor.withValues(alpha: 0.9),
-                  borderRadius: const BorderRadius.vertical(
-                    bottom: Radius.circular(16),
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF8B5A3C), // Earthy brown header
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(24),
                   ),
                 ),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Color(0xFF7B4F2F)),
+                      icon: const Icon(Icons.arrow_back, color: Color(0xFFFCF8F1)),
                       onPressed: () => Navigator.pop(context),
                     ),
                     Expanded(
@@ -806,11 +821,12 @@ class _ChatScreenState extends State<ChatScreen> {
                           Text(
                             'Your safe space',
                             style: GoogleFonts.lexend(
-                              fontSize: 20,
+                              fontSize: 22,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF7B4F2F),
+                              color: const Color(0xFFFCF8F1),
                             ),
                           ),
+                          const SizedBox(height: 8),
                           FutureBuilder<String>(
                             future: GenderUtil.getCompanionName(),
                             builder: (context, snapshot) {
@@ -818,35 +834,33 @@ class _ChatScreenState extends State<ChatScreen> {
                               return Text(
                                 'Model: $companionName',
                                 style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: const Color(0xFF7B4F2F),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: const Color(0xFFFCF8F1).withValues(alpha: 0.9),
                                 ),
                               );
                             },
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 6),
                           // Connection status indicator
                           _buildConnectionStatus(),
-                          const SizedBox(height: 2),
-                          // Session indicator
-                          _buildSessionIndicator(),
                         ],
                       ),
                     ),
                     // Primary actions - always visible
                     IconButton(
-                      icon: const Icon(Icons.add_comment_outlined, color: Color(0xFF7B4F2F)),
+                      icon: const Icon(Icons.add_comment_outlined, color: Color(0xFFFCF8F1)),
                       onPressed: _startNewChat,
                       tooltip: 'New chat',
                     ),
                     IconButton(
-                      icon: const Icon(Icons.history, color: Color(0xFF7B4F2F)),
+                      icon: const Icon(Icons.history, color: Color(0xFFFCF8F1)),
                       onPressed: _navigateToChatHistory,
                       tooltip: 'Chat history',
                     ),
                     // Secondary actions - overflow menu
                     PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert, color: Color(0xFF7B4F2F)),
+                      icon: const Icon(Icons.more_vert, color: Color(0xFFFCF8F1)),
                       tooltip: 'More options',
                       onSelected: (String value) {
                         switch (value) {
@@ -1066,7 +1080,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildMessageBubble(ChatMessage message) {
     final isUser = message.role == 'user';
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -1076,27 +1090,33 @@ class _ChatScreenState extends State<ChatScreen> {
           if (!isUser) ...[
             CircleAvatar(
               radius: 16,
-              backgroundColor: const Color(0xFF9C6644),
+              backgroundColor: const Color(0xFF8B5A3C), // Earthy brown
               child: Text(
                 'A',
                 style: GoogleFonts.lexend(
                   color: const Color(0xFFFCF8F1),
                   fontWeight: FontWeight.w600,
+                  fontSize: 12,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
           ],
           Flexible(
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isUser ? const Color(0xFF7B4F2F) : const Color(0xFF7B4F2F), // Taupe color for both user and AI messages
-                borderRadius: BorderRadius.circular(16),
+                color: const Color(0xFF8B5A3C), // Earthy brown for message boxes
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(isUser ? 20 : 4),
+                  topRight: Radius.circular(isUser ? 4 : 20),
+                  bottomLeft: const Radius.circular(20),
+                  bottomRight: const Radius.circular(20),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 4,
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
                 ],
@@ -1107,18 +1127,19 @@ class _ChatScreenState extends State<ChatScreen> {
                   Text(
                     message.content,
                     style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: isUser ? const Color(0xFFFCF8F1) : const Color(0xFFFCF8F1), // Cream text for both user and AI messages
+                      fontSize: 15,
+                      color: const Color(0xFFFCF8F1), // Cream text
+                      height: 1.4,
                     ),
                   ),
                   if (message.isStreaming) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     SizedBox(
-                      width: 12,
-                      height: 12,
+                      width: 16,
+                      height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: isUser ? const Color(0xFFFCF8F1) : const Color(0xFFFCF8F1), // Cream loading indicator for both
+                        color: const Color(0xFFFCF8F1), // Cream loading indicator
                       ),
                     ),
                   ],
@@ -1127,15 +1148,16 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           if (isUser) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
             CircleAvatar(
               radius: 16,
-              backgroundColor: const Color(0xFF4F372D),
+              backgroundColor: const Color(0xFF6B4226), // Darker brown for user
               child: Text(
                 'U',
                 style: GoogleFonts.lexend(
                   color: const Color(0xFFFCF8F1),
                   fontWeight: FontWeight.w600,
+                  fontSize: 12,
                 ),
               ),
             ),

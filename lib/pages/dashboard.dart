@@ -1,7 +1,3 @@
-// ⚠️ DEPRECATED: This Dashboard widget has been replaced by CardNavigationPage
-// This file is kept for reference but should not be used in new implementations
-// Use CardNavigationPage instead for the main landing page
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -13,8 +9,6 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  int _selectedIndex = 0;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,142 +24,146 @@ class _DashboardState extends State<Dashboard> {
             ],
           ),
         ),
-        child: Stack(
-          children: [
-            // ✨ HEADER SECTION: Full-width container with wavy bottom edge
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 200,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // ✨ HEADER SECTION: App title
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(32),
                 decoration: const BoxDecoration(
                   color: Color(0xFF9C6644), // Primary accent earth brown
                   borderRadius: BorderRadius.vertical(
                     bottom: Radius.circular(32),
                   ),
                 ),
-                child: SafeArea(
+                child: Column(
+                  children: [
+                    Text(
+                      'Nafs AI',
+                      style: GoogleFonts.lexend(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Your safe space starts here',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              // ✨ MAIN TILES: Chat and Settings
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // ✨ HEADLINE: Main title
-                      Text(
-                        'Talk to me Akhi',
-                        style: GoogleFonts.lexend(
-                          fontSize: 36,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
+                      // Chat Tile
+                      _buildMainTile(
+                        title: 'Start Chat',
+                        subtitle: 'Begin a conversation',
+                        icon: Icons.chat_bubble_outline,
+                        onTap: () => Navigator.pushNamed(context, '/chat'),
                       ),
-                      const SizedBox(height: 8),
-                      // ✨ SUBTITLE: Supporting text
-                      Text(
-                        'Your safe space starts here',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          color: Colors.white70,
-                        ),
+
+                      const SizedBox(height: 24),
+
+                      // Settings Tile
+                      _buildMainTile(
+                        title: 'Settings',
+                        subtitle: 'Customize your experience',
+                        icon: Icons.settings_outlined,
+                        onTap: () => Navigator.pushNamed(context, '/settings'),
                       ),
                     ],
                   ),
                 ),
               ),
+
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainTile({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-      ),
-      
-      // ✨ FLOATING ACTION BUTTON: Center-docked with "+" icon
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/chat');
-        },
-        backgroundColor: const Color(0xFF9C6644), // Primary accent
-        elevation: 4,
-        child: const Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 28,
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      
-      // ✨ BOTTOM NAVIGATION BAR: Four placeholder icons with notch
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8.0,
-        color: Colors.white,
-        elevation: 8,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              // Home icon
-              IconButton(
-                icon: Icon(
-                  Icons.home,
-                  color: _selectedIndex == 0
-                      ? const Color(0xFF9C6644)
-                      : const Color(0xFF4F372D).withValues(alpha: 0.6),
-                  size: 28,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _selectedIndex = 0;
-                  });
-                },
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF9C6644).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
               ),
-              // Chats icon
-              IconButton(
-                icon: Icon(
-                  Icons.chat_bubble_outline,
-                  color: _selectedIndex == 1
-                      ? const Color(0xFF9C6644)
-                      : const Color(0xFF4F372D).withValues(alpha: 0.6),
-                  size: 28,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _selectedIndex = 1;
-                  });
-                },
+              child: Icon(
+                icon,
+                size: 32,
+                color: const Color(0xFF9C6644),
               ),
-              // Spacer for FAB
-              const SizedBox(width: 40),
-              // Stats icon
-              IconButton(
-                icon: Icon(
-                  Icons.bar_chart,
-                  color: _selectedIndex == 2
-                      ? const Color(0xFF9C6644)
-                      : const Color(0xFF4F372D).withValues(alpha: 0.6),
-                  size: 28,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _selectedIndex = 2;
-                  });
-                },
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.lexend(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF4F372D),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: const Color(0xFF4F372D).withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
               ),
-              // Profile icon
-              IconButton(
-                icon: Icon(
-                  Icons.person_outline,
-                  color: _selectedIndex == 3
-                      ? const Color(0xFF9C6644)
-                      : const Color(0xFF4F372D).withValues(alpha: 0.6),
-                  size: 28,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _selectedIndex = 3;
-                  });
-                },
-              ),
-            ],
-          ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 20,
+              color: const Color(0xFF4F372D).withValues(alpha: 0.5),
+            ),
+          ],
         ),
       ),
     );
