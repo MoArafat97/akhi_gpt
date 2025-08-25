@@ -41,19 +41,19 @@ android {
 
     signingConfigs {
         create("release") {
-            val alias = System.getenv("ANDROID_KEY_ALIAS") ?: keystoreProperties.getProperty("keyAlias") ?: "nafs_ai_key"
+            val alias = System.getenv("ANDROID_KEY_ALIAS") ?: keystoreProperties.getProperty("keyAlias")
             val keyPass = System.getenv("ANDROID_KEY_PASSWORD") ?: keystoreProperties.getProperty("keyPassword")
             val storePass = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: keystoreProperties.getProperty("storePassword")
             val storeFilePath = keystoreProperties.getProperty("storeFile") ?: "keystore.jks"
 
-            // Ensure we have all required values
-            if (keyPass != null && storePass != null) {
+            // Ensure we have all required values including alias
+            if (alias != null && keyPass != null && storePass != null) {
                 keyAlias = alias
                 keyPassword = keyPass
                 storePassword = storePass
                 storeFile = file(storeFilePath)
             } else {
-                throw GradleException("Missing signing configuration. Please set environment variables or create key.properties file with keyPassword and storePassword.")
+                throw GradleException("Missing signing configuration. Please set environment variables or create key.properties file with keyAlias, keyPassword and storePassword.")
             }
         }
     }
