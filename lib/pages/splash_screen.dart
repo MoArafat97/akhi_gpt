@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../utils/gender_util.dart';
-import '../services/terms_acceptance_service.dart';
-// import '../services/openrouter_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -25,29 +22,10 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     try {
-      // Check if user has ever seen onboarding (this ensures onboarding is shown exactly once)
-      final hasSeenOnboarding = await GenderUtil.hasSeenOnboarding();
-
-      if (!hasSeenOnboarding) {
-        // User has never seen onboarding, show it and mark as seen
-        await GenderUtil.setHasSeenOnboarding();
-        Navigator.pushReplacementNamed(context, '/onboard1');
-        return;
-      }
-
-      // User has seen onboarding, now check if they've accepted Terms and Conditions
-      final hasAcceptedTerms = await TermsAcceptanceService.hasAcceptedTerms();
-
-      if (!hasAcceptedTerms) {
-        // User must accept Terms and Conditions before accessing the app
-        Navigator.pushReplacementNamed(context, '/terms_conditions');
-        return;
-      }
-
-      // All requirements met, proceed to main app
-      Navigator.pushReplacementNamed(context, '/card_navigation');
+      // Always navigate directly to dashboard - backend API key is used
+      Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (e) {
-      // On error, default to onboarding for safety
+      // On error, default to onboarding
       Navigator.pushReplacementNamed(context, '/onboard1');
     }
   }
@@ -85,14 +63,10 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(30),
-                  child: Image.asset(
-                    'images/nafs-ai.jpg',
-                    width: 120,
-                    height: 120,
-                    fit: BoxFit.cover,
-                  ),
+                child: const Icon(
+                  Icons.chat_bubble_outline,
+                  size: 60,
+                  color: Colors.white,
                 ),
               ),
               
