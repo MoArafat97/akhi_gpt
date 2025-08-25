@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:akhi_gpt/services/subscription_service.dart';
-import 'package:akhi_gpt/services/message_counter_service.dart';
-import 'package:akhi_gpt/services/secure_config_service.dart';
+import 'package:nafs_ai/services/subscription_service.dart';
+import 'package:nafs_ai/services/message_counter_service.dart';
+import 'package:nafs_ai/services/secure_config_service.dart';
 
 void main() {
   group('SubscriptionService Tests', () {
@@ -21,9 +21,6 @@ void main() {
 OPENROUTER_API_KEY=test-key
 DEFAULT_MODEL=test-model
 FALLBACK_MODELS=test-model1,test-model2
-REVENUECAT_API_KEY_ANDROID=test-android-key
-REVENUECAT_API_KEY_IOS=test-ios-key
-REVENUECAT_ENTITLEMENT_ID=premium
 ''');
       }
     });
@@ -34,27 +31,27 @@ REVENUECAT_ENTITLEMENT_ID=premium
       await prefs.clear();
     });
 
-    test('should initialize with free tier when no API key configured', () async {
+    test('should initialize with premium tier (RevenueCat removed)', () async {
       // Arrange
       final service = SubscriptionService.instance;
-      
+
       // Act
       await service.initialize();
-      
+
       // Assert
-      expect(service.currentTier, equals(SubscriptionTier.free));
-      expect(service.isPremium, isFalse);
-      expect(service.dailyMessageLimit, equals(75));
+      expect(service.currentTier, equals(SubscriptionTier.premium));
+      expect(service.isPremium, isTrue);
+      expect(service.dailyMessageLimit, equals(999999)); // Unlimited
     });
 
-    test('should return correct feature availability for free tier', () {
+    test('should return correct feature availability (all features available)', () {
       // Arrange
       final service = SubscriptionService.instance;
-      
+
       // Act & Assert
-      expect(service.isFeatureAvailable('personality_styles'), isFalse);
-      expect(service.isFeatureAvailable('unlimited_messages'), isFalse);
-      expect(service.isFeatureAvailable('unknown_feature'), isTrue); // Default to available
+      expect(service.isFeatureAvailable('personality_styles'), isTrue);
+      expect(service.isFeatureAvailable('unlimited_messages'), isTrue);
+      expect(service.isFeatureAvailable('unknown_feature'), isTrue);
     });
 
     test('should handle subscription tier enum correctly', () {
@@ -63,7 +60,7 @@ REVENUECAT_ENTITLEMENT_ID=premium
       expect(SubscriptionTier.premium.displayName, equals('Premium'));
       
       expect(SubscriptionTier.free.dailyMessageLimit, equals(75));
-      expect(SubscriptionTier.premium.dailyMessageLimit, equals(500));
+      expect(SubscriptionTier.premium.dailyMessageLimit, equals(1500));
       
       expect(SubscriptionTier.free.hasPersonalityStyles, isFalse);
       expect(SubscriptionTier.premium.hasPersonalityStyles, isTrue);
@@ -91,7 +88,7 @@ REVENUECAT_ENTITLEMENT_ID=premium
       // Assert
       expect(service.currentCount, equals(0));
       expect(service.hasReachedLimit, isFalse);
-      expect(service.remainingMessages, equals(75)); // Default free tier limit
+      expect(service.remainingMessages, equals(999999)); // Unlimited (RevenueCat removed)
     });
 
     test('should increment message count correctly', () async {
@@ -104,109 +101,71 @@ REVENUECAT_ENTITLEMENT_ID=premium
       
       // Assert
       expect(success, isTrue);
-      expect(service.currentCount, equals(1));
-      expect(service.remainingMessages, equals(74));
+      expect(service.currentCount, equals(0)); // Count not actually incremented (RevenueCat removed)
+      expect(service.remainingMessages, equals(999999)); // Unlimited
     });
 
-    test('should prevent sending messages when limit reached', () async {
+    test('should allow unlimited messages (RevenueCat removed)', () async {
       // Arrange
       final service = MessageCounterService.instance;
       await service.initialize();
-      
-      // Simulate reaching the limit
-      for (int i = 0; i < 75; i++) {
-        await service.incrementMessageCount();
-      }
-      
-      // Act
+
+      // Act - try to send many messages
       final canSend = await service.canSendMessage();
       final incrementSuccess = await service.incrementMessageCount();
-      
-      // Assert
-      expect(canSend, isFalse);
-      expect(incrementSuccess, isFalse);
-      expect(service.hasReachedLimit, isTrue);
-      expect(service.remainingMessages, equals(0));
+
+      // Assert - unlimited messages allowed
+      expect(canSend, isTrue);
+      expect(incrementSuccess, isTrue);
+      expect(service.hasReachedLimit, isFalse);
+      expect(service.remainingMessages, equals(999999)); // Unlimited
     });
 
-    test('should calculate usage percentage correctly', () async {
+    test('should calculate usage percentage correctly (unlimited)', () async {
       // Arrange
       final service = MessageCounterService.instance;
       await service.initialize();
 
-      // Act - send 37 messages (about 50% of 75)
-      int successfulMessages = 0;
-      for (int i = 0; i < 37; i++) {
-        final success = await service.incrementMessageCount();
-        if (success) successfulMessages++;
-      }
+      // Act - usage percentage should be 0 for unlimited messages
+      final percentage = service.usagePercentage;
 
-      // Assert - check actual successful messages
-      final expectedPercentage = successfulMessages / 75.0;
-      expect(service.usagePercentage, closeTo(expectedPercentage, 0.02));
+      // Assert - 0% usage for unlimited messages
+      expect(percentage, equals(0.0));
     });
 
-    test('should return correct warning levels', () async {
+    test('should return normal warning level (unlimited messages)', () async {
       // Arrange
       final service = MessageCounterService.instance;
       await service.initialize();
-      
-      // Test normal level (0 messages)
+
+      // Act & Assert - always normal level for unlimited messages
       expect(service.getWarningLevel(), equals(MessageUsageWarningLevel.normal));
-      
-      // Test warning level (75% of 75 = 56 messages)
-      for (int i = 0; i < 56; i++) {
-        await service.incrementMessageCount();
-      }
-      expect(service.getWarningLevel(), equals(MessageUsageWarningLevel.warning));
-      
-      // Test critical level (90% of 75 = 67 messages)
-      for (int i = 0; i < 11; i++) {
-        await service.incrementMessageCount();
-      }
-      expect(service.getWarningLevel(), equals(MessageUsageWarningLevel.critical));
-      
-      // Test limit reached (75 messages)
-      for (int i = 0; i < 8; i++) {
-        await service.incrementMessageCount();
-      }
-      expect(service.getWarningLevel(), equals(MessageUsageWarningLevel.limitReached));
     });
 
-    test('should provide usage statistics', () async {
+    test('should provide usage statistics (unlimited)', () async {
       // Arrange
       final service = MessageCounterService.instance;
       await service.initialize();
-      
-      // Send some messages
-      for (int i = 0; i < 25; i++) {
-        await service.incrementMessageCount();
-      }
-      
+
       // Act
       final stats = service.getUsageStats();
-      
-      // Assert
-      expect(stats['currentCount'], equals(25));
-      expect(stats['dailyLimit'], equals(75));
-      expect(stats['remainingMessages'], equals(50));
+
+      // Assert - unlimited messages
+      expect(stats['currentCount'], equals(0));
+      expect(stats['dailyLimit'], equals(999999));
+      expect(stats['remainingMessages'], equals(999999));
       expect(stats['hasReachedLimit'], isFalse);
-      expect(stats['subscriptionTier'], equals('Free'));
-      expect(stats['usagePercentage'], closeTo(0.33, 0.02));
+      expect(stats['subscriptionTier'], equals('Premium'));
+      expect(stats['usagePercentage'], equals(0.0));
     });
 
-    test('should show upgrade prompt at 90% usage for free users', () async {
+    test('should not show upgrade prompt (premium users)', () async {
       // Arrange
       final service = MessageCounterService.instance;
       await service.initialize();
-      
-      // Act - send 67 messages (90% of 75)
-      for (int i = 0; i < 67; i++) {
-        await service.incrementMessageCount();
-      }
-      
-      // Assert
-      expect(service.shouldShowUpgradePrompt(), isTrue);
+
+      // Act & Assert - no upgrade prompt for premium users
+      expect(service.shouldShowUpgradePrompt(), isFalse);
     });
   });
 
@@ -249,7 +208,9 @@ REVENUECAT_ENTITLEMENT_ID=premium
       expect(config, isA<Map<String, bool>>());
       expect(config.containsKey('openrouter_configured'), isTrue);
       expect(config.containsKey('revenuecat_configured'), isTrue);
+      expect(config['revenuecat_configured'], isFalse); // RevenueCat removed
       expect(config.containsKey('entitlement_configured'), isTrue);
+      expect(config['entitlement_configured'], isFalse); // RevenueCat removed
     });
   });
 
@@ -265,9 +226,6 @@ REVENUECAT_ENTITLEMENT_ID=premium
         dotenv.testLoad(fileInput: '''
 OPENROUTER_API_KEY=test-key
 DEFAULT_MODEL=test-model
-REVENUECAT_API_KEY_ANDROID=test-android-key
-REVENUECAT_API_KEY_IOS=test-ios-key
-REVENUECAT_ENTITLEMENT_ID=premium
 ''');
       }
       
@@ -278,37 +236,31 @@ REVENUECAT_ENTITLEMENT_ID=premium
       await subscriptionService.initialize();
       await messageCounterService.initialize();
       
-      // Assert
-      expect(subscriptionService.currentTier, equals(SubscriptionTier.free));
+      // Assert - premium tier (RevenueCat removed)
+      expect(subscriptionService.currentTier, equals(SubscriptionTier.premium));
       expect(messageCounterService.currentCount, equals(0));
-      expect(messageCounterService.dailyLimit, equals(75));
+      expect(messageCounterService.dailyLimit, equals(999999)); // Unlimited
     });
 
-    test('should handle message counting with subscription limits', () async {
+    test('should handle unlimited message counting (RevenueCat removed)', () async {
       // Arrange
       TestWidgetsFlutterBinding.ensureInitialized();
       SharedPreferences.setMockInitialValues({});
-      
+
       final subscriptionService = SubscriptionService.instance;
       final messageCounterService = MessageCounterService.instance;
-      
+
       await subscriptionService.initialize();
       await messageCounterService.initialize();
-      
-      // Act - simulate reaching free tier limit
-      for (int i = 0; i < 75; i++) {
-        final success = await messageCounterService.incrementMessageCount();
-        expect(success, isTrue);
-      }
-      
-      // Try to send one more message
+
+      // Act - try to send many messages
       final canSendMore = await messageCounterService.canSendMessage();
       final incrementSuccess = await messageCounterService.incrementMessageCount();
-      
-      // Assert
-      expect(canSendMore, isFalse);
-      expect(incrementSuccess, isFalse);
-      expect(messageCounterService.hasReachedLimit, isTrue);
+
+      // Assert - unlimited messages allowed
+      expect(canSendMore, isTrue);
+      expect(incrementSuccess, isTrue);
+      expect(messageCounterService.hasReachedLimit, isFalse);
     });
   });
 

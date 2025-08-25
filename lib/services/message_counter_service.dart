@@ -28,12 +28,8 @@ class MessageCounterService {
 
   /// Check if user has reached daily limit
   bool get hasReachedLimit {
-    // Debug bypass for testing
-    if (DebugConfig.skipPremium) {
-      return false; // Never reached limit in debug mode
-    }
-    final limit = SubscriptionService.instance.dailyMessageLimit;
-    return _currentCount >= limit;
+    // Never reached limit (RevenueCat removed, unlimited messages)
+    return false;
   }
 
   /// Get daily message limit based on subscription tier
@@ -105,51 +101,14 @@ class MessageCounterService {
 
   /// Increment message count and save to storage
   Future<bool> incrementMessageCount() async {
-    if (!_isInitialized) {
-      await initialize();
-    }
-
-    // Check if we need to reset for new day first
-    await _checkAndResetIfNewDay();
-
-    // Check if user has reached limit
-    if (hasReachedLimit) {
-      developer.log('Message limit reached: $_currentCount/${SubscriptionService.instance.dailyMessageLimit}', name: 'MessageCounterService');
-      return false;
-    }
-
-    // Debug logging
-    if (DebugConfig.skipPremium) {
-      developer.log('Debug mode: Bypassing message limit check', name: 'MessageCounterService');
-    }
-
-    try {
-      _currentCount++;
-      
-      // Save to storage
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_messageCountKey, _currentCount);
-      
-      developer.log('Message count incremented: $_currentCount/${SubscriptionService.instance.dailyMessageLimit}', name: 'MessageCounterService');
-      return true;
-    } catch (e) {
-      developer.log('Failed to increment message count: $e', name: 'MessageCounterService');
-      // Revert the increment on error
-      _currentCount--;
-      return false;
-    }
+    // Always allow message increment (RevenueCat removed, unlimited messages)
+    return true;
   }
 
   /// Check if user can send a message (hasn't reached limit)
   Future<bool> canSendMessage() async {
-    if (!_isInitialized) {
-      await initialize();
-    }
-
-    // Check if we need to reset for new day first
-    await _checkAndResetIfNewDay();
-
-    return !hasReachedLimit;
+    // Always allow message sending (RevenueCat removed, unlimited messages)
+    return true;
   }
 
   /// Get time until next reset (midnight)

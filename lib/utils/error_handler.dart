@@ -2,7 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
+// TESTING MODE: RevenueCat import temporarily disabled
+// import 'package:purchases_flutter/purchases_flutter.dart';
 import 'dart:developer' as developer;
 
 /// Enhanced error handling utility for OpenRouter API interactions
@@ -359,9 +360,9 @@ class ErrorHandler {
   static String getApiConfigurationErrorMessage(ErrorAnalysis analysis) {
     switch (analysis.category) {
       case ErrorCategory.authentication:
-        return 'Invalid API key. Please check your OpenRouter configuration in Settings.';
+        return 'Authentication error. Please try again in a moment.';
       case ErrorCategory.configuration:
-        return 'API not configured. Please add your OpenRouter API key in Settings to start chatting.';
+        return 'Service temporarily unavailable. Our servers are configuring. Please try again shortly.';
       case ErrorCategory.network:
         return 'Connection issue. Please check your internet connection and try again.';
       case ErrorCategory.rateLimit:
@@ -380,18 +381,11 @@ class ErrorHandler {
   ) {
     final message = getApiConfigurationErrorMessage(analysis);
 
-    if (analysis.requiresConfiguration || analysis.category == ErrorCategory.configuration) {
-      showErrorSnackBar(
-        context,
-        message,
-        actionLabel: 'Setup',
-        onAction: () {
-          Navigator.pushNamed(context, '/openrouter_setup');
-        },
-      );
-    } else {
-      showErrorSnackBar(context, message);
-    }
+    // In proxy-only architecture, no setup route; just show message optionally with retry
+    showErrorSnackBar(
+      context,
+      message,
+    );
   }
 }
 
@@ -447,6 +441,8 @@ enum ErrorSeverity {
 
 
 /// Subscription-specific error handling methods
+// TESTING MODE: RevenueCat error handling temporarily disabled
+/*
 extension SubscriptionErrorHandler on ErrorHandler {
   /// Handle RevenueCat purchase errors
   static String handlePurchaseError(dynamic error) {
@@ -491,6 +487,14 @@ extension SubscriptionErrorHandler on ErrorHandler {
     }
 
     return 'An unexpected purchase error occurred: ${error.toString()}';
+  }
+*/
+
+extension SubscriptionErrorHandler on ErrorHandler {
+  /// Handle RevenueCat purchase errors
+  static String handlePurchaseError(dynamic error) {
+    developer.log('🧪 TESTING MODE: Purchase error handling disabled', name: 'SubscriptionErrorHandler');
+    return 'Purchase functionality is temporarily disabled for testing.';
   }
 
   /// Handle subscription service initialization errors

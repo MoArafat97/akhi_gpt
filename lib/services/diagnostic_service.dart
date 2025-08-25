@@ -4,7 +4,7 @@ import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'user_api_key_service.dart';
+
 
 /// Comprehensive diagnostic service for OpenRouter API connectivity and configuration
 class DiagnosticService {
@@ -51,20 +51,17 @@ class DiagnosticService {
     
     // 1. Environment Configuration Check
     report.environmentCheck = await _checkEnvironmentConfiguration();
-    
-    // 2. API Key Validation
-    report.apiKeyValidation = await _validateApiKey();
-    
-    // 3. Model Availability Check
+
+    // 2. Model Availability Check (server-side)
     report.modelAvailability = await _checkModelAvailability();
     
-    // 4. Proxy Configuration Check
+    // 3. Proxy Configuration Check
     report.proxyCheck = await _checkProxyConfiguration();
-    
-    // 5. Network Connectivity Test
+
+    // 4. Network Connectivity Test
     report.networkConnectivity = await _testNetworkConnectivity();
-    
-    // 6. Fallback Logic Test
+
+    // 5. Fallback Logic Test
     report.fallbackLogic = await _testFallbackLogic();
     
     // Generate overall status
@@ -125,51 +122,14 @@ class DiagnosticService {
     return check;
   }
 
-  /// Validate API key with OpenRouter
+  /// API key validation is handled server-side in proxy-only architecture
   Future<ApiKeyValidation> _validateApiKey() async {
-    developer.log('🔍 Validating user API key...', name: 'DiagnosticService');
-
+    developer.log('🔍 Skipping client API key validation (server-managed)', name: 'DiagnosticService');
     final validation = ApiKeyValidation();
-    final apiKey = await UserApiKeyService.instance.getApiKey();
-
-    if (apiKey == null || apiKey.isEmpty) {
-      validation.error = 'No user API key configured';
-      return validation;
-    }
-    
-    try {
-      // Test API key with a simple request
-      final response = await _dio.get(
-        '/models',
-        options: Options(
-          headers: {'Authorization': 'Bearer $apiKey'},
-        ),
-      );
-      
-      validation.isValid = response.statusCode == 200;
-      validation.statusCode = response.statusCode;
-      
-      if (validation.isValid) {
-        final data = response.data as Map<String, dynamic>;
-        validation.availableModels = (data['data'] as List?)?.length ?? 0;
-      }
-      
-    } catch (e) {
-      if (e is DioException) {
-        validation.statusCode = e.response?.statusCode;
-        validation.error = e.response?.data?.toString() ?? e.message;
-        
-        // Check for specific error types
-        if (e.response?.statusCode == 401) {
-          validation.error = 'Invalid API key - authentication failed';
-        } else if (e.response?.statusCode == 403) {
-          validation.error = 'API key lacks required permissions';
-        }
-      } else {
-        validation.error = e.toString();
-      }
-    }
-    
+    validation.isValid = true;
+    validation.statusCode = 200;
+    validation.availableModels = 0;
+    validation.error = null;
     return validation;
   }
 

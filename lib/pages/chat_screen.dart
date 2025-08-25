@@ -6,12 +6,16 @@ import '../models/chat_message.dart';
 import '../models/chat_history.dart';
 import '../services/openrouter_service.dart';
 import '../services/hive_service.dart';
+import '../services/islamic_reminder_service.dart';
+import '../services/terms_acceptance_service.dart';
 import '../utils/settings_util.dart';
 import '../utils/gender_util.dart';
 import '../utils/error_handler.dart';
-import '../services/subscription_service.dart';
-import '../services/message_counter_service.dart';
-import 'paywall_screen.dart';
+import 'chat_history_page.dart';
+// TESTING MODE: Subscription, message counter, and paywall imports temporarily disabled
+// import '../services/subscription_service.dart';
+// import '../services/message_counter_service.dart';
+// import 'paywall_screen.dart';
 // import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 /// Analysis result for message content and emotional context
@@ -29,8 +33,13 @@ class MessageAnalysis {
 
 class ChatScreen extends StatefulWidget {
   final Color bgColor;
+  final ChatHistory? resumeFromHistory;
 
-  const ChatScreen({super.key, this.bgColor = const Color(0xFF7B4F2F)});
+  const ChatScreen({
+    super.key,
+    this.bgColor = const Color(0xFFFCF8F1),
+    this.resumeFromHistory,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -61,23 +70,36 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
 
     // Defer initialization until after the widget tree is built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeService();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Validate Terms acceptance before allowing chat access
+      await _validateTermsAcceptance();
+
+      await _initializeService();
       // Load user gender preference
       _loadUserGender();
       // Load lockout state with error handling
       _loadLockoutState().catchError((error) {
         developer.log('Failed to load lockout state in initState: $error', name: 'ChatScreen');
       });
-      // Test connection on startup
+      // Reset Islamic reminder counter for fresh chat session
+      IslamicReminderService.resetCounter();
+      // Test connection on startup after service is initialized
       _testConnection();
-      // Load chat history if enabled
-      _loadChatHistoryIfEnabled();
+
+      // Load chat history - either from resume parameter or most recent
+      if (widget.resumeFromHistory != null) {
+        _resumeFromChatHistory(widget.resumeFromHistory!);
+      } else {
+        _loadChatHistoryIfEnabled();
+      }
     });
   }
 
   /// Test OpenRouter connection on startup
   void _testConnection() async {
+    print('🔍 CHAT: _testConnection() method called!');
+    developer.log('🔍 CHAT: Starting connection test...', name: 'ChatScreen');
+
     if (mounted) {
       setState(() {
         _isCheckingConnection = true;
@@ -85,9 +107,9 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     try {
-      developer.log('Testing OpenRouter connection...', name: 'ChatScreen');
+      developer.log('🔍 CHAT: Testing OpenRouter connection...', name: 'ChatScreen');
       final isConnected = await _openRouterService.testConnection();
-      developer.log('Connection test result: $isConnected', name: 'ChatScreen');
+      developer.log('🔍 CHAT: Connection test result: $isConnected', name: 'ChatScreen');
 
       if (mounted) {
         setState(() {
@@ -97,12 +119,12 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
       if (!isConnected) {
-        developer.log('❌ OpenRouter connection failed', name: 'ChatScreen');
+        developer.log('❌ CHAT: OpenRouter connection failed', name: 'ChatScreen');
       } else {
-        developer.log('✅ OpenRouter connection successful', name: 'ChatScreen');
+        developer.log('✅ CHAT: OpenRouter connection successful', name: 'ChatScreen');
       }
     } catch (e) {
-      developer.log('❌ Connection test error: $e', name: 'ChatScreen');
+      developer.log('❌ CHAT: Connection test error: $e', name: 'ChatScreen');
       if (mounted) {
         setState(() {
           _isConnected = false;
@@ -139,7 +161,28 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  void _initializeService() async {
+  /// Validate Terms and Conditions acceptance before allowing chat access
+  /// This is a legal compliance requirement
+  Future<void> _validateTermsAcceptance() async {
+    try {
+      final hasAcceptedTerms = await TermsAcceptanceService.hasAcceptedTerms();
+
+      if (!hasAcceptedTerms && mounted) {
+        // User has not accepted terms, redirect to Terms page
+        Navigator.pushReplacementNamed(context, '/terms_conditions');
+        return;
+      }
+    } catch (e) {
+      // On error, assume terms not accepted for safety
+      developer.log('Failed to validate terms acceptance: $e', name: 'ChatScreen');
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/terms_conditions');
+        return;
+      }
+    }
+  }
+
+  Future<void> _initializeService() async {
     // Get dynamic model display name
     final modelDisplayName = await _openRouterService.getModelDisplayName();
     setState(() {
@@ -444,6 +487,8 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
+    // TESTING MODE: Message limit checks and paywall navigation disabled
+    /*
     // Check message limits for free users
     final canSend = await MessageCounterService.instance.canSendMessage();
     if (!canSend) {
@@ -463,9 +508,13 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
     }
+    */
 
-    // Increment message count (this will succeed since we checked canSend above)
-    await MessageCounterService.instance.incrementMessageCount();
+    print('🧪 TESTING MODE: Skipping message limit checks and paywall navigation');
+
+    // TESTING MODE: Message count increment disabled
+    // await MessageCounterService.instance.incrementMessageCount();
+    print('🧪 TESTING MODE: Skipping message count increment');
 
     // Analyze message for emotional context and harmful content
     final analysis = _analyzeMessage(text);
@@ -580,10 +629,21 @@ class _ChatScreenState extends State<ChatScreen> {
       String errorMessage;
       bool showSetupButton = false;
 
-      // Check if it's a configuration error
-      if (e.toString().contains('Service not configured') ||
-          e.toString().contains('missing API key')) {
+      // Check for specific error types and provide helpful messages
+      final errorString = e.toString().toLowerCase();
+
+      if (errorString.contains('service not configured') ||
+          errorString.contains('missing api key')) {
         errorMessage = 'Please set up your OpenRouter API key in Settings to start chatting. 🔑';
+        showSetupButton = true;
+      } else if (errorString.contains('rate limit') || errorString.contains('429')) {
+        errorMessage = 'The AI service is experiencing high demand right now, ${_userGender.casualAddress}. I\'m trying alternative models, but please be patient. 🤲';
+      } else if (errorString.contains('network') || errorString.contains('connection')) {
+        errorMessage = 'Having trouble connecting to the AI service, ${_userGender.casualAddress}. Please check your internet connection and try again. 📶';
+      } else if (errorString.contains('timeout')) {
+        errorMessage = 'The request is taking longer than expected, ${_userGender.casualAddress}. Please try again with a shorter message. ⏱️';
+      } else if (errorString.contains('401') || errorString.contains('unauthorized')) {
+        errorMessage = 'There\'s an issue with the API authentication, ${_userGender.casualAddress}. Please contact support if this continues. 🔐';
         showSetupButton = true;
       } else {
         errorMessage = 'I\'m having some technical difficulties right now, ${_userGender.casualAddress}. Please try again in a moment. 🤲';
@@ -683,6 +743,40 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  /// Build session indicator
+  Widget _buildSessionIndicator() {
+    if (_sessionId == null || _messages.isEmpty) {
+      return Text(
+        'New conversation',
+        style: GoogleFonts.inter(
+          fontSize: 10,
+          color: const Color(0xFF7B4F2F).withOpacity(0.6),
+          fontStyle: FontStyle.italic,
+        ),
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.chat_bubble,
+          size: 10,
+          color: const Color(0xFF7B4F2F).withOpacity(0.6),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          'Session: ${_sessionId!.substring(_sessionId!.length - 8)}',
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            color: const Color(0xFF7B4F2F).withOpacity(0.6),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -703,7 +797,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Color(0xFFFCF8F1)),
+                      icon: const Icon(Icons.arrow_back, color: Color(0xFF7B4F2F)),
                       onPressed: () => Navigator.pop(context),
                     ),
                     Expanded(
@@ -715,7 +809,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             style: GoogleFonts.lexend(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFFFCF8F1),
+                              color: const Color(0xFF7B4F2F),
                             ),
                           ),
                           FutureBuilder<String>(
@@ -726,7 +820,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 'Model: $companionName',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
-                                  color: const Color(0xFFFCF8F1),
+                                  color: const Color(0xFF7B4F2F),
                                 ),
                               );
                             },
@@ -734,14 +828,71 @@ class _ChatScreenState extends State<ChatScreen> {
                           const SizedBox(height: 4),
                           // Connection status indicator
                           _buildConnectionStatus(),
+                          const SizedBox(height: 2),
+                          // Session indicator
+                          _buildSessionIndicator(),
                         ],
                       ),
                     ),
-                    // Clear chat button
+                    // Primary actions - always visible
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Color(0xFFFCF8F1)),
-                      onPressed: _showClearChatDialog,
-                      tooltip: 'Clear chat',
+                      icon: const Icon(Icons.add_comment_outlined, color: Color(0xFF7B4F2F)),
+                      onPressed: _startNewChat,
+                      tooltip: 'New chat',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.history, color: Color(0xFF7B4F2F)),
+                      onPressed: _navigateToChatHistory,
+                      tooltip: 'Chat history',
+                    ),
+                    // Secondary actions - overflow menu
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, color: Color(0xFF7B4F2F)),
+                      tooltip: 'More options',
+                      onSelected: (String value) {
+                        switch (value) {
+                          case 'save':
+                            _saveCurrentChatManually();
+                            break;
+                          case 'clear':
+                            _showClearChatDialog();
+                            break;
+                        }
+                      },
+                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                        PopupMenuItem<String>(
+                          value: 'save',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.save_outlined, color: Color(0xFF7B4F2F), size: 20),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Save Chat',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF7B4F2F),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'clear',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.delete_outline, color: Color(0xFF7B4F2F), size: 20),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Clear Chat',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF7B4F2F),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -761,14 +912,14 @@ class _ChatScreenState extends State<ChatScreen> {
                                 Icon(
                                   Icons.chat_bubble_outline,
                                   size: 64,
-                                  color: const Color(0xFFFCF8F1).withValues(alpha: 0.7),
+                                  color: const Color(0xFF7B4F2F).withValues(alpha: 0.7),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'Hey $displayName! 👋',
                                   style: GoogleFonts.lexend(
                                     fontSize: 18,
-                                    color: const Color(0xFFFCF8F1),
+                                    color: const Color(0xFF7B4F2F),
                                   ),
                                 ),
                                 const SizedBox(height: 8),
@@ -776,7 +927,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   'What\'s on your mind today?',
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
-                                    color: const Color(0xFFFCF8F1).withValues(alpha: 0.7),
+                                    color: const Color(0xFF7B4F2F).withValues(alpha: 0.7),
                                   ),
                                 ),
                               ],
@@ -941,7 +1092,7 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isUser ? const Color(0xFFFCF8F1) : Colors.white, // Cream color for user messages
+                color: isUser ? const Color(0xFF7B4F2F) : const Color(0xFF7B4F2F), // Taupe color for both user and AI messages
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -958,7 +1109,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     message.content,
                     style: GoogleFonts.inter(
                       fontSize: 14,
-                      color: isUser ? const Color(0xFF4F372D) : const Color(0xFF4F372D), // Dark brown text for both user and AI messages
+                      color: isUser ? const Color(0xFFFCF8F1) : const Color(0xFFFCF8F1), // Cream text for both user and AI messages
                     ),
                   ),
                   if (message.isStreaming) ...[
@@ -968,7 +1119,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       height: 12,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: isUser ? const Color(0xFF9C6644) : const Color(0xFF9C6644), // Brown loading indicator for both
+                        color: isUser ? const Color(0xFFFCF8F1) : const Color(0xFFFCF8F1), // Cream loading indicator for both
                       ),
                     ),
                   ],
@@ -1021,6 +1172,35 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  /// Resume from a specific chat history
+  void _resumeFromChatHistory(ChatHistory chatHistory) {
+    try {
+      setState(() {
+        _messages.clear();
+        _messages.addAll(chatHistory.messages);
+        _sessionId = chatHistory.sessionId;
+      });
+      developer.log('Resumed chat history: $_sessionId with ${_messages.length} messages', name: 'ChatScreen');
+      _scrollToBottom();
+    } catch (e) {
+      developer.log('Failed to resume chat history: $e', name: 'ChatScreen');
+      // Don't show error to user - fallback to empty chat
+    }
+  }
+
+  /// Navigate to chat history page
+  void _navigateToChatHistory() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ChatHistoryPage(
+          bgColor: widget.bgColor,
+          currentSessionId: _sessionId,
+          onSwitchToSession: _switchToChatSession,
+        ),
+      ),
+    );
+  }
+
   /// Save chat history immediately after each message if enabled
   Future<void> _saveChatHistoryIfEnabled() async {
     try {
@@ -1039,7 +1219,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (existingHistory != null) {
         // Update existing history
         existingHistory.updateMessages(_messages);
-        await _hiveService.updateChatHistory(existingHistory.key, existingHistory);
+        await _hiveService.updateChatHistory(existingHistory.key as int, existingHistory);
         developer.log('Updated existing chat history: $_sessionId', name: 'ChatScreen');
       } else {
         // Create new history
@@ -1057,6 +1237,157 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  /// Manually save the current chat session
+  Future<void> _saveCurrentChatManually() async {
+    try {
+      // Check if chat history saving is enabled
+      final savingEnabled = await getBool('saveChatHistory', true);
+      if (!savingEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Chat history saving is disabled in settings'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (_messages.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No messages to save'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Generate session ID if not exists
+      _sessionId ??= 'chat_${DateTime.now().millisecondsSinceEpoch}';
+
+      // Check if we already have this session saved
+      final existingHistory = await _hiveService.getChatHistoryBySessionId(_sessionId!);
+
+      if (existingHistory != null) {
+        // Update existing history
+        existingHistory.updateMessages(_messages);
+        await _hiveService.updateChatHistory(existingHistory.key as int, existingHistory);
+        developer.log('Manually updated existing chat history: $_sessionId', name: 'ChatScreen');
+      } else {
+        // Create new history
+        final chatHistory = ChatHistory(
+          sessionId: _sessionId!,
+          messages: _messages,
+          title: _generateChatTitle(),
+        );
+        await _hiveService.addChatHistory(chatHistory);
+        developer.log('Manually saved new chat history: $_sessionId', name: 'ChatScreen');
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Chat saved successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      developer.log('Failed to manually save chat history: $e', name: 'ChatScreen');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save chat: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Start a new chat session while preserving the current one
+  Future<void> _startNewChat() async {
+    try {
+      // Save current chat if it has messages
+      if (_messages.isNotEmpty) {
+        await _saveCurrentChatManually();
+      }
+
+      // Clear current chat interface
+      setState(() {
+        _messages.clear();
+        _sessionId = null; // This will generate a new session ID when needed
+      });
+
+      // Reset Islamic reminder counter for new chat session
+      IslamicReminderService.resetCounter();
+
+      developer.log('Started new chat session', name: 'ChatScreen');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Started new chat'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+    } catch (e) {
+      developer.log('Failed to start new chat: $e', name: 'ChatScreen');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to start new chat: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Switch to a different chat session, saving current one first
+  Future<void> _switchToChatSession(ChatHistory chatHistory) async {
+    try {
+      // Save current chat if it has messages and is different from the target
+      if (_messages.isNotEmpty && _sessionId != chatHistory.sessionId) {
+        await _saveCurrentChatManually();
+      }
+
+      // Load the target chat session
+      setState(() {
+        _messages.clear();
+        _messages.addAll(chatHistory.messages);
+        _sessionId = chatHistory.sessionId;
+      });
+
+      developer.log('Switched to chat session: ${chatHistory.sessionId}', name: 'ChatScreen');
+      _scrollToBottom();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Switched to: ${chatHistory.title ?? 'Chat'}'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+    } catch (e) {
+      developer.log('Failed to switch chat session: $e', name: 'ChatScreen');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to switch chat: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   /// Show dialog to confirm clearing chat history
   void _showClearChatDialog() async {
     final savingEnabled = await getBool('saveChatHistory', true);
@@ -1067,17 +1398,17 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: widget.bgColor,
-        title: const Text('Clear Chat', style: TextStyle(color: Colors.white)),
+        title: const Text('Clear Chat', style: TextStyle(color: Color(0xFF4F372D))),
         content: Text(
           savingEnabled
               ? 'This chat history is saved and encrypted on your device. Clear it permanently?'
               : 'Chat history isn\'t saved. Clear the current conversation?',
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Color(0xFF4F372D)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('No', style: TextStyle(color: Colors.white)),
+            child: const Text('No', style: TextStyle(color: Color(0xFF4F372D))),
           ),
           TextButton(
             onPressed: () async {

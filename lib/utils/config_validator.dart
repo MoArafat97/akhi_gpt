@@ -6,17 +6,8 @@ class ConfigValidator {
   
   /// Validate API key format and presence (now user-dependent)
   static ValidationResult validateApiKey() {
-    developer.log('🔍 API key validation is now user-dependent...', name: 'ConfigValidator');
-
-    // API keys are now provided by users, not environment variables
-    return ValidationResult(
-      isValid: false,
-      error: 'API key validation requires user input',
-      suggestion: 'Users must provide their own OpenRouter API keys through the app settings',
-    );
-    
-    developer.log('✅ API key validation passed', name: 'ConfigValidator');
-    return ValidationResult(isValid: true);
+    developer.log('🔍 Skipping client API key validation (managed elsewhere)', name: 'ConfigValidator');
+    return const ValidationResult(isValid: true);
   }
   
   /// Validate model configuration
@@ -191,28 +182,28 @@ class ConfigValidator {
     buffer.writeln('');
     
     buffer.writeln('🔧 Environment:');
-    buffer.writeln('  - Variables loaded: ${summary['environment_loaded'] ? "✅" : "❌"}');
+    buffer.writeln('  - Variables loaded: ${(summary['environment_loaded'] as bool) ? "✅" : "❌"}');
     buffer.writeln('  - Total variables: ${summary['total_env_vars']}');
     buffer.writeln('');
     
     buffer.writeln('🔑 API Key:');
-    buffer.writeln('  - Present: ${summary['api_key_present'] ? "✅" : "❌"}');
-    buffer.writeln('  - Format valid: ${summary['api_key_format_valid'] ? "✅" : "❌"}');
+    buffer.writeln('  - Present: ${(summary['api_key_present'] as bool) ? "✅" : "❌"}');
+    buffer.writeln('  - Format valid: ${(summary['api_key_format_valid'] as bool) ? "✅" : "❌"}');
     buffer.writeln('  - Length: ${summary['api_key_length']} characters');
     buffer.writeln('');
     
     buffer.writeln('🤖 Models:');
     buffer.writeln('  - Default model: ${summary['default_model'] ?? "❌ Not set"}');
-    buffer.writeln('  - Default model valid: ${summary['default_model_valid'] ? "✅" : "❌"}');
+    buffer.writeln('  - Default model valid: ${(summary['default_model_valid'] as bool) ? "✅" : "❌"}');
     buffer.writeln('  - Fallback models count: ${summary['fallback_models_count']}');
     buffer.writeln('  - Fallback models: ${summary['fallback_models_raw'] ?? "❌ Not set"}');
     buffer.writeln('');
     
     buffer.writeln('🔄 Proxy:');
-    buffer.writeln('  - Enabled: ${summary['proxy_enabled'] ? "✅ Yes" : "❌ No"}');
-    if (summary['proxy_enabled']) {
+    buffer.writeln('  - Enabled: ${(summary['proxy_enabled'] as bool) ? "✅ Yes" : "❌ No"}');
+    if ((summary['proxy_enabled'] as bool)) {
       buffer.writeln('  - Endpoint: ${summary['proxy_endpoint'] ?? "❌ Not set"}');
-      buffer.writeln('  - Endpoint valid: ${summary['proxy_endpoint_valid'] ? "✅" : "❌"}');
+      buffer.writeln('  - Endpoint valid: ${(summary['proxy_endpoint_valid'] as bool) ? "✅" : "❌"}');
     }
     buffer.writeln('');
     

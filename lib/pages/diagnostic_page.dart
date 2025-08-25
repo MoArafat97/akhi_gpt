@@ -7,7 +7,7 @@ import '../services/openrouter_service.dart';
 class DiagnosticPage extends StatefulWidget {
   final Color bgColor;
 
-  const DiagnosticPage({super.key, this.bgColor = const Color(0xFF7B4F2F)});
+  const DiagnosticPage({super.key, this.bgColor = const Color(0xFFFCF8F1)});
 
   @override
   State<DiagnosticPage> createState() => _DiagnosticPageState();
@@ -121,9 +121,9 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                 ElevatedButton.icon(
                   onPressed: _isRunning ? null : _testConnection,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF7B4F2F), // Secondary brown
+                    backgroundColor: const Color(0xFF9C6644), // Secondary brown
                     foregroundColor: Colors.white,
-                    disabledBackgroundColor: const Color(0xFF7B4F2F).withValues(alpha: 0.5),
+                    disabledBackgroundColor: const Color(0xFF9C6644).withValues(alpha: 0.5),
                     disabledForegroundColor: Colors.white70,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
@@ -141,9 +141,9 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
                   child: ElevatedButton.icon(
                     onPressed: _isRunning ? null : _testAllModels,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF7B4F2F), // Secondary brown
+                      backgroundColor: const Color(0xFF9C6644), // Secondary brown
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFF7B4F2F).withValues(alpha: 0.5),
+                      disabledBackgroundColor: const Color(0xFF9C6644).withValues(alpha: 0.5),
                       disabledForegroundColor: Colors.white70,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -419,7 +419,7 @@ class _DiagnosticPageState extends State<DiagnosticPage> {
     try {
       // final results = await _openRouterService.testAllModels();
       final results = <String, dynamic>{}; // Placeholder for now
-      final successCount = results.values.where((success) => success).length;
+      final successCount = results.values.where((success) => success == true).length;
       
       setState(() {
         _statusMessage = 'Model testing complete: $successCount/${results.length} available';

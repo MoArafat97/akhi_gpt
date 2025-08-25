@@ -4,7 +4,7 @@ import 'chat_screen.dart';
 class ChatPage extends StatelessWidget {
   final Color bgColor;
 
-  const ChatPage({super.key, this.bgColor = const Color(0xFF7B4F2F)});
+  const ChatPage({super.key, this.bgColor = const Color(0xFFFCF8F1)});
 
   @override
   Widget build(BuildContext context) {

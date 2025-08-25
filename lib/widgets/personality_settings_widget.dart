@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../utils/gender_util.dart';
 import '../config/personality_config.dart';
-import '../services/subscription_service.dart';
-import '../pages/paywall_screen.dart';
+// TESTING MODE: Subscription and paywall imports temporarily disabled
+// import '../services/subscription_service.dart';
+// import '../pages/paywall_screen.dart';
 
 class PersonalitySettingsWidget extends StatefulWidget {
   const PersonalitySettingsWidget({super.key});
@@ -26,8 +27,13 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
   Future<void> _loadSettings() async {
     try {
       final isEnabled = await GenderUtil.isPersonalityStyleEnabled();
-      final style = await GenderUtil.getPersonalityStyle();
       final gender = await GenderUtil.getUserGender();
+
+      // Only load the saved style if personality is enabled
+      PersonalityStyle style = PersonalityStyle.simpleModern;
+      if (isEnabled) {
+        style = await GenderUtil.getPersonalityStyle();
+      }
 
       setState(() {
         _isPersonalityEnabled = isEnabled;
@@ -80,6 +86,22 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
   }
 
   Future<void> _selectPersonalityStyle(PersonalityStyle style) async {
+    // Only allow style selection if personality is enabled
+    if (!_isPersonalityEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enable personality style first'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+
+    // TESTING MODE: Premium checks and paywall navigation disabled
+    /*
     // Check if this is a premium style and user doesn't have premium
     if (_isPremiumStyle(style) && !SubscriptionService.instance.isPremium) {
       // Show paywall
@@ -98,13 +120,18 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
         return;
       }
     }
+    */
+
+    print('🧪 TESTING MODE: All personality styles available without premium checks');
 
     setState(() {
       _selectedStyle = style;
+      // Don't automatically enable personality - user must use the toggle
     });
 
     try {
       await GenderUtil.setPersonalityStyle(style);
+      // Don't automatically enable personality style - respect the toggle state
 
       // Show feedback
       if (mounted) {
@@ -178,8 +205,8 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const ListTile(
-        leading: Icon(Icons.psychology, color: Color(0xFF424242)),
-        title: Text('Personality Style', style: TextStyle(color: Color(0xFF424242))),
+        leading: Icon(Icons.psychology, color: Color(0xFFFCF8F1)),
+        title: Text('Personality Style', style: TextStyle(color: Color(0xFFFCF8F1))),
         trailing: CircularProgressIndicator(),
       );
     }
@@ -188,25 +215,25 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
       children: [
         // Companion type selection
         ListTile(
-          leading: const Icon(Icons.person, color: Color(0xFF424242)),
-          title: const Text('Companion Type', style: TextStyle(color: Color(0xFF424242))),
+          leading: const Icon(Icons.person, color: Color(0xFFFCF8F1)),
+          title: const Text('Companion Type', style: TextStyle(color: Color(0xFFFCF8F1))),
           subtitle: Text(
             _userGender.displayName,
-            style: const TextStyle(color: Color(0xFF666666)),
+            style: const TextStyle(color: Color(0xFFFCF8F1)),
           ),
-          trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF424242), size: 16),
+          trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFFFCF8F1), size: 16),
           onTap: () => _showCompanionTypeDialog(),
         ),
 
         // Main toggle switch
         ListTile(
-          leading: const Icon(Icons.psychology, color: Color(0xFF424242)),
-          title: const Text('Personality Style', style: TextStyle(color: Color(0xFF424242))),
+          leading: const Icon(Icons.psychology, color: Color(0xFFFCF8F1)),
+          title: const Text('Personality Style', style: TextStyle(color: Color(0xFFFCF8F1))),
           subtitle: Text(
             _isPersonalityEnabled
                 ? 'Using ${_selectedStyle.displayName}'
                 : 'Using Simple Modern English',
-            style: const TextStyle(color: Color(0xFF666666)),
+            style: const TextStyle(color: Color(0xFFFCF8F1)),
           ),
           trailing: Switch(
             value: _isPersonalityEnabled,
@@ -230,7 +257,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
                 const Text(
                   'Choose Style:',
                   style: TextStyle(
-                    color: Color(0xFF424242),
+                    color: Color(0xFFFCF8F1),
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
@@ -238,7 +265,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
                 const SizedBox(height: 12),
                 
                 // Style options based on gender
-                ...PersonalityStyle.getGenderSpecificStyles(_userGender == UserGender.male)
+                ...PersonalityStyle.forGender(_userGender == UserGender.male)
                     .map((style) => _buildStyleOption(style)),
               ],
             ),
@@ -253,7 +280,8 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
   Widget _buildStyleOption(PersonalityStyle style) {
     final isSelected = _selectedStyle == style;
     final isPremium = _isPremiumStyle(style);
-    final hasAccess = !isPremium || SubscriptionService.instance.isPremium;
+    // TESTING MODE: All personality styles have access
+    final hasAccess = true; // !isPremium || SubscriptionService.instance.isPremium;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
@@ -277,7 +305,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
             children: [
               Icon(
                 isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                color: isSelected ? Color(0xFF424242) : Color(0xFF666666),
+                color: isSelected ? Color(0xFFFCF8F1) : Color(0xFFFCF8F1),
                 size: 20,
               ),
               const SizedBox(width: 12),
@@ -291,13 +319,14 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
                           style.displayName,
                           style: TextStyle(
                             color: hasAccess
-                                ? (isSelected ? Color(0xFF424242) : Color(0xFF666666))
+                                ? (isSelected ? Color(0xFFFCF8F1) : Color(0xFFFCF8F1))
                                 : Color(0xFF999999),
                             fontSize: 16,
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                           ),
                         ),
-                        if (isPremium && !SubscriptionService.instance.isPremium) ...[
+                        // TESTING MODE: Premium lock icons disabled
+                        if (false) ...[  // isPremium && !SubscriptionService.instance.isPremium
                           const SizedBox(width: 8),
                           Icon(
                             Icons.lock,
@@ -309,17 +338,15 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isPremium && !SubscriptionService.instance.isPremium
-                          ? 'Premium required'
-                          : _getStyleDescription(style),
+                      // TESTING MODE: Always show style description
+                      _getStyleDescription(style), // isPremium && !SubscriptionService.instance.isPremium ? 'Premium required' :
                       style: TextStyle(
                         color: hasAccess
-                            ? (isSelected ? Color(0xFF666666) : Color(0xFF999999))
+                            ? (isSelected ? Color(0xFFFCF8F1) : Color(0xFFFCF8F1))
                             : Colors.amber.withOpacity(0.8),
                         fontSize: 12,
-                        fontStyle: isPremium && !SubscriptionService.instance.isPremium
-                            ? FontStyle.italic
-                            : FontStyle.normal,
+                        // TESTING MODE: Always use normal font style
+                        fontStyle: FontStyle.normal, // isPremium && !SubscriptionService.instance.isPremium ? FontStyle.italic :
                       ),
                     ),
                   ],
@@ -337,7 +364,8 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF2D2D2D),
+          // Use solid cream background so content is readable
+          backgroundColor: const Color(0xFFFCF8F1),
           title: const Text(
             'Choose Your Companion',
             style: TextStyle(color: Color(0xFF424242), fontWeight: FontWeight.w600),
@@ -347,7 +375,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
             children: [
               const Text(
                 'Who would you like to chat with?',
-                style: TextStyle(color: Color(0xFF666666)),
+                style: TextStyle(color: Color(0xFF424242)),
               ),
               const SizedBox(height: 20),
 
@@ -375,7 +403,7 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text(
                 'Cancel',
-                style: TextStyle(color: Color(0xFF666666)),
+                style: TextStyle(color: Color(0xFF424242)),
               ),
             ),
           ],
@@ -457,13 +485,13 @@ class _PersonalitySettingsWidgetState extends State<PersonalitySettingsWidget> {
       case PersonalityStyle.bro:
         return 'Gen Z slang and modern expressions';
       case PersonalityStyle.brudda:
-        return 'UK roadman/London street culture';
+        return 'UK roadman vibe with authentic slang and real talk';
       case PersonalityStyle.akhi:
-        return 'Muslim/Arabic with urban expressions';
+        return 'UK urban culture with Islamic brotherhood and spiritual guidance';
       case PersonalityStyle.sis:
-        return 'Gen Z slang with sisterly vibes';
+        return 'Warm, modern American sister vibe';
       case PersonalityStyle.habibi:
-        return 'UK roadman with caring sisterly tone';
+        return 'American urban Gen Z feminine with warm sisterly care';
       case PersonalityStyle.ukhti:
         return 'Muslim sisterhood with urban expressions';
     }

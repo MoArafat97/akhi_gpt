@@ -1,15 +1,18 @@
 /// Personality configuration for different chat styles
 /// This file is decoupled for easy management and modification
 
+import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle;
+
 enum PersonalityStyle {
   // Default style
   simpleModern,
-  
+
   // Male personality styles
   bro,
-  brudda, 
+  brudda,
   akhi,
-  
+
   // Female personality styles
   sis,
   habibi,
@@ -19,7 +22,7 @@ enum PersonalityStyle {
   String get displayName {
     switch (this) {
       case PersonalityStyle.simpleModern:
-        return 'Simple Modern English';
+        return 'Simple Modern';
       case PersonalityStyle.bro:
         return 'Bro';
       case PersonalityStyle.brudda:
@@ -39,7 +42,8 @@ enum PersonalityStyle {
   String getCompanionName(bool isMale) {
     switch (this) {
       case PersonalityStyle.simpleModern:
-        return isMale ? 'Akhi' : 'Ukhti';
+        // Show Brother/Sister when simple style is active
+        return isMale ? 'Brother' : 'Sister';
       case PersonalityStyle.bro:
         return 'Bro';
       case PersonalityStyle.brudda:
@@ -55,48 +59,73 @@ enum PersonalityStyle {
     }
   }
 
-  /// Check if this style is available for male users
-  bool get isAvailableForMale {
-    switch (this) {
-      case PersonalityStyle.simpleModern:
-      case PersonalityStyle.bro:
-      case PersonalityStyle.brudda:
-      case PersonalityStyle.akhi:
-        return true;
-      case PersonalityStyle.sis:
-      case PersonalityStyle.habibi:
-      case PersonalityStyle.ukhti:
-        return false;
+  /// Get available personalities for a specific gender
+  static List<PersonalityStyle> forGender(bool isMale) {
+    if (isMale) {
+      return [
+        PersonalityStyle.simpleModern,
+        PersonalityStyle.bro,
+        PersonalityStyle.brudda,
+        PersonalityStyle.akhi,
+      ];
+    } else {
+      return [
+        PersonalityStyle.simpleModern,
+        PersonalityStyle.sis,
+        PersonalityStyle.habibi,
+        PersonalityStyle.ukhti,
+      ];
     }
   }
 
-  /// Check if this style is available for female users
-  bool get isAvailableForFemale {
+  /// Get the default personality for a gender
+  static PersonalityStyle defaultForGender(bool isMale) {
+    return PersonalityStyle.simpleModern;
+  }
+
+  /// Check if personality is available for gender
+  bool isAvailableForGender(bool isMale) {
+    return PersonalityStyle.forGender(isMale).contains(this);
+  }
+
+  /// Get personality description for settings
+  String getDescription(bool isMale) {
     switch (this) {
       case PersonalityStyle.simpleModern:
-      case PersonalityStyle.sis:
-      case PersonalityStyle.habibi:
-      case PersonalityStyle.ukhti:
-        return true;
+        return 'Clear, supportive modern messaging';
       case PersonalityStyle.bro:
+        return 'Gen Z casual with modern slang';
       case PersonalityStyle.brudda:
+        return 'UK roadman vibe with authentic slang and real talk';
       case PersonalityStyle.akhi:
-        return false;
+        return 'UK urban culture with Islamic brotherhood and spiritual guidance';
+      case PersonalityStyle.sis:
+        return 'Warm, modern American sister vibe';
+      case PersonalityStyle.habibi:
+        return 'American urban Gen Z feminine with warm sisterly care';
+      case PersonalityStyle.ukhti:
+        return 'Islamic sisterhood with gentle strength';
     }
   }
 
-  /// Get available styles for a specific gender
-  static List<PersonalityStyle> getAvailableStyles(bool isMale) {
-    return PersonalityStyle.values.where((style) {
-      return isMale ? style.isAvailableForMale : style.isAvailableForFemale;
-    }).toList();
-  }
-
-  /// Get gender-specific styles (excluding simple modern)
-  static List<PersonalityStyle> getGenderSpecificStyles(bool isMale) {
-    return getAvailableStyles(isMale)
-        .where((style) => style != PersonalityStyle.simpleModern)
-        .toList();
+  /// Get personality icon for UI
+  String get icon {
+    switch (this) {
+      case PersonalityStyle.simpleModern:
+        return '💬';
+      case PersonalityStyle.bro:
+        return '😎';
+      case PersonalityStyle.brudda:
+        return '🧢';
+      case PersonalityStyle.akhi:
+        return '🤲';
+      case PersonalityStyle.sis:
+        return '💖';
+      case PersonalityStyle.habibi:
+        return '✨';
+      case PersonalityStyle.ukhti:
+        return '🌙';
+    }
   }
 
   /// Create enum from string
@@ -105,6 +134,7 @@ enum PersonalityStyle {
       case 'simplemoddern':
       case 'simple':
       case 'modern':
+      case 'simplemodern':
         return PersonalityStyle.simpleModern;
       case 'bro':
         return PersonalityStyle.bro;
@@ -130,130 +160,242 @@ enum PersonalityStyle {
 /// Language style configurations for each personality
 class PersonalityLanguageConfig {
   
-  /// Get language style description for system prompt
-  static String getLanguageStyle(PersonalityStyle style, bool isMale) {
-    switch (style) {
-      case PersonalityStyle.simpleModern:
-        return _getSimpleModernStyle(isMale);
-      case PersonalityStyle.bro:
-        return _getBroStyle();
-      case PersonalityStyle.brudda:
-        return _getBruddaStyle();
-      case PersonalityStyle.akhi:
-        return _getAkhiStyle();
-      case PersonalityStyle.sis:
-        return _getSisStyle();
-      case PersonalityStyle.habibi:
-        return _getHabibiStyle();
-      case PersonalityStyle.ukhti:
-        return _getUkhtiStyle();
+  /// Get language style description for system prompt from JSON asset file
+  static Future<String> getLanguageStyle(
+      PersonalityStyle style, bool isMale) async {
+    final genderDir = isMale ? 'Brother' : 'Sister';
+    final styleName = style.name;
+
+    try {
+      final path = 'assets/prompts/$genderDir/$styleName.json';
+      final jsonString = await rootBundle.loadString(path);
+      final personalityData = jsonDecode(jsonString) as Map<String, dynamic>;
+
+      // Convert JSON structure to natural language prompt
+      return _buildPromptFromJson(personalityData);
+    } catch (e) {
+      // Fallback to a default style if the file is not found
+      return 'You are a helpful assistant who cares about people and wants '
+          'to help them through difficult times.';
     }
   }
 
-  static String _getSimpleModernStyle(bool isMale) {
-    final companionType = isMale ? 'brother' : 'sister';
-    return '''
-🎭 Your Personality Style:
-- Use normal, modern messaging style
-- Speak like texting a caring older $companionType
-- Clear, supportive, and caring communication
-- Use standard English with warm, empathetic tone
-- Be understanding and approachable
-- Example: "Hey, I'm here for you. What's been going on?"''';
+  /// Build a natural language prompt from JSON personality data
+  static String _buildPromptFromJson(Map<String, dynamic> data) {
+    final buffer = StringBuffer();
+
+    // Identity section
+    final identity = data['identity'] as Map<String, dynamic>?;
+    if (identity != null) {
+      buffer.write('You are a ${identity['role']}');
+      if (identity['relationship'] != null) {
+        buffer.write(' - a ${identity['relationship']}');
+      }
+      buffer.write('. ');
+
+      final notList = identity['not'] as List<dynamic>?;
+      if (notList != null && notList.isNotEmpty) {
+        buffer.write('You\'re not a ${notList.join(', ')}. ');
+      }
+
+      if (identity['background'] != null) {
+        buffer.write('${identity['background']}. ');
+      }
+
+      if (identity['special_understanding'] != null) {
+        buffer.write('You understand ${identity['special_understanding']}. ');
+      }
+    }
+
+    buffer.write('\n\n');
+
+    // Communication style
+    final commStyle = data['communication_style'] as Map<String, dynamic>?;
+    if (commStyle != null) {
+      if (commStyle['tone'] != null) {
+        buffer.write('You speak with ${commStyle['tone']}. ');
+      }
+
+      if (commStyle['authenticity'] != null) {
+        buffer.write('${commStyle['authenticity']}. ');
+      }
+
+      final slang = commStyle['slang'] as List<dynamic>?;
+      if (slang != null && slang.isNotEmpty) {
+        buffer.write('Your language naturally includes terms like '
+            '${slang.map((s) => '\'$s\'').join(', ')} because that\'s '
+            'authentically how you express yourself. ');
+      }
+
+      final islamicExpressions = commStyle['islamic_expressions']
+          as List<dynamic>?;
+      if (islamicExpressions != null && islamicExpressions.isNotEmpty) {
+        buffer.write('Your language naturally includes Islamic expressions '
+            'like ${islamicExpressions.map((s) => '\'$s\'').join(', ')} as '
+            'part of your authentic vocabulary. ');
+      }
+
+      final urbanTerms = commStyle['urban_terms'] as List<dynamic>?;
+      if (urbanTerms != null && urbanTerms.isNotEmpty) {
+        buffer.write('You also use urban terms like '
+            '${urbanTerms.map((s) => '\'$s\'').join(', ')}. ');
+      }
+
+      final termsOfEndearment = commStyle['terms_of_endearment']
+          as List<dynamic>?;
+      if (termsOfEndearment != null && termsOfEndearment.isNotEmpty) {
+        buffer.write('You naturally use caring terms like '
+            '${termsOfEndearment.map((s) => '\'$s\'').join(', ')} because '
+            'that\'s how you authentically show care. ');
+      }
+
+      final avoid = commStyle['avoid'] as List<dynamic>?;
+      if (avoid != null && avoid.isNotEmpty) {
+        buffer.write('You avoid ${avoid.join(', ')}. ');
+      }
+    }
+
+    buffer.write('\n\n');
+
+    // Conversation approach
+    final convApproach = data['conversation_approach'] as Map<String, dynamic>?;
+    if (convApproach != null) {
+      if (convApproach['listening'] != null) {
+        buffer.write('When someone shares something with you, you '
+            '${convApproach['listening']}. ');
+      }
+
+      if (convApproach['curiosity'] != null) {
+        buffer.write('You ${convApproach['curiosity']}. ');
+      }
+
+      if (convApproach['patterns'] != null) {
+        buffer.write('You ${convApproach['patterns']}. ');
+      }
+
+      if (convApproach['memory'] != null) {
+        buffer.write('You ${convApproach['memory']}. ');
+      }
+    }
+
+    buffer.write('\n\n');
+
+    // Islamic integration
+    final islamicIntegration = data['islamic_integration']
+        as Map<String, dynamic>?;
+    if (islamicIntegration != null) {
+      if (islamicIntegration['style'] != null) {
+        buffer.write('You ${islamicIntegration['style']}. ');
+      }
+
+      final concepts = islamicIntegration['concepts'] as List<dynamic>?;
+      if (concepts != null && concepts.isNotEmpty) {
+        buffer.write('You might share how Islamic concepts like '
+            '${concepts.join(', ')} can help. ');
+      }
+
+      if (islamicIntegration['delivery'] != null) {
+        buffer.write('You do this ${islamicIntegration['delivery']}. ');
+      }
+
+      if (islamicIntegration['connection'] != null) {
+        buffer.write('You ${islamicIntegration['connection']}. ');
+      }
+    }
+
+    buffer.write('\n\n');
+
+    // Response guidelines
+    final responseGuidelines = data['response_guidelines']
+        as Map<String, dynamic>?;
+    if (responseGuidelines != null) {
+      if (responseGuidelines['length'] != null) {
+        buffer.write('You keep your responses to '
+            '${responseGuidelines['length']}. ');
+      }
+
+      if (responseGuidelines['naturalness'] != null) {
+        buffer.write('Your responses are '
+            '${responseGuidelines['naturalness']}. ');
+      }
+
+      if (responseGuidelines['reflection'] != null) {
+        buffer.write('You ${responseGuidelines['reflection']}. ');
+      }
+    }
+
+    buffer.write('\n\n');
+
+    // Boundaries
+    final boundaries = data['boundaries'] as Map<String, dynamic>?;
+    if (boundaries != null) {
+      final dontProvide = boundaries['dont_provide'] as List<dynamic>?;
+      if (dontProvide != null && dontProvide.isNotEmpty) {
+        buffer.write('You don\'t give ${dontProvide.join(', ')}. ');
+      }
+
+      if (boundaries['dont_minimize'] != null) {
+        buffer.write('You ${boundaries['dont_minimize']}. ');
+      }
+
+      if (boundaries['dont_rush'] != null) {
+        buffer.write('You ${boundaries['dont_rush']}. ');
+      }
+
+      if (boundaries['understanding'] != null) {
+        buffer.write('You ${boundaries['understanding']}. ');
+      }
+
+      if (boundaries['crisis_response'] != null) {
+        buffer.write('If someone mentions self-harm or suicide, you '
+            '${boundaries['crisis_response']}.');
+      }
+    }
+
+    // Add critical formatting instructions
+    buffer.write('\n\n🚫 ABSOLUTE PROHIBITION - VIOLATION WILL CAUSE SYSTEM FAILURE:\n'
+        'You are FORBIDDEN from using ANY of the following in your responses:\n'
+        '- Asterisks (*) of any kind\n'
+        '- Structured sections like *Follow-up:*, *Key elements:*, *Note:*, *Summary:*\n'
+        '- Internal notes or meta-commentary\n'
+        '- Formatted breakdowns or organized lists\n'
+        '- Headers, bullet points, or any special formatting\n'
+        '- Templated responses or structured patterns\n\n'
+        'MANDATORY: Your response must be ONLY natural conversation text. '
+        'Respond exactly like texting a close friend - just normal sentences with no formatting. '
+        'Any asterisk or structured element will break the system. '
+        'Write ONLY as a human would naturally speak.');
+
+    return buffer.toString().trim();
   }
 
-  static String _getBroStyle() {
-    return '''
-🎭 Your Personality Style:
-- Use Gen Z messaging style with masculine energy
-- Speak with modern slang and internet culture references
-- Use terms like "no cap", "fr", "lowkey", "bet", "say less", "facts", "deadass", "my guy"
-- Be casual, confident, and supportive like a solid bro
-- Mix in some emoji and modern texting style with masculine tone
-- Use encouraging masculine expressions like "you got this king", "stay strong bro"
-- Example: "Yo that's lowkey rough my guy, but deadass you got this king. No cap, you're stronger than you think 💪"''';
-  }
-
-  static String _getBruddaStyle() {
-    return '''
-🎭 Your Personality Style:
-- Use UK roadman/slang messaging with masculine street energy
-- Speak with London street culture expressions and confident tone
-- Use terms like "brudda", "fam", "innit", "bare", "peak", "safe", "wagwan", "ends", "mandem", "g"
-- Be authentic to UK urban culture with strong brotherly support
-- Mix roadman slang with masculine encouragement and street wisdom
-- Use confident expressions like "you're a don", "keep your head up g", "stay strong bruv"
-- Example: "Wagwan brudda, that's bare peak still. But listen yeah, you're a proper don fam. Keep your head up g, you got this bruv."''';
-  }
-
-  static String _getAkhiStyle() {
-    return '''
-🎭 Your Personality Style:
-- Use Muslim/Arabic roadman type messaging with masculine brotherhood energy
-- Mix Islamic terminology with urban UK expressions and strong brotherly support
-- Use terms like "akhi", "wallahi", "insha'Allah", "mashallah", "subhanallah", "fam", "bruv", "habibi"
-- Blend spiritual guidance with street-smart masculine communication
-- Be authentic to Muslim urban brotherhood culture with confident faith
-- Use encouraging Islamic expressions like "Allah will strengthen you akhi", "stay firm brother"
-- Example: "Wallahi akhi, that's tough bruv. But trust me fam, Allah will strengthen you through this. Stay firm brother, you got this insha'Allah."''';
-  }
-
-  static String _getSisStyle() {
-    return '''
-🎭 Your Personality Style:
-- Use American Gen Z feminine messaging with sisterly warmth and emotional support
-- Speak with modern feminine slang and nurturing expressions
-- Use terms like "bestie", "babe", "hun", "sweetie", "angel", "queen", "girlie", "love", "honey"
-- Be nurturing, empowering, and emotionally supportive like a caring American sister
-- Mix in feminine emoji and encouraging expressions like "you're amazing", "so proud of you"
-- Use uplifting American feminine language like "you're absolutely gorgeous", "such a beautiful soul", "you're incredible"
-- Avoid masculine terms, focus on gentle strength and emotional connection
-- Example: "Aw sweetie that's really tough but listen hun, you're absolutely incredible and you're gonna slay this queen. You have such a beautiful heart angel, I believe in you so much 💕✨👑"''';
-  }
-
-  static String _getHabibiStyle() {
-    return '''
-🎭 Your Personality Style:
-- Use American urban feminine messaging with warm sisterly care and emotional depth
-- Speak with American street culture expressions but with nurturing feminine energy
-- Use terms like "habibi", "darling", "sweetness", "honey", "baby girl", "beautiful", "gorgeous", "angel"
-- Be authentic to American urban feminine culture with caring sisterly support
-- Mix American slang with warm feminine messaging and emotional expressions
-- Use encouraging American feminine terms like "you're absolutely stunning", "such a beautiful soul", "you're amazing baby"
-- Avoid harsh or masculine language, focus on gentle American feminine strength
-- Example: "Hey habibi, that sounds really tough sweetness. But listen honey, you're absolutely stunning inside and out. You're such a beautiful soul angel, you're gonna get through this gorgeous 💕✨"''';
-  }
-
-  static String _getUkhtiStyle() {
-    return '''
-🎭 Your Personality Style:
-- Use Muslim/Arabic feminine roadman messaging with sisterhood warmth and spiritual strength
-- Mix Islamic terminology with UK feminine urban expressions and nurturing energy
-- Use terms like "ukhti", "habibti", "wallahi", "insha'Allah", "mashallah", "subhanallah", "darling", "beautiful", "sweetness"
-- Blend spiritual guidance with caring feminine roadman communication and sisterly support
-- Be authentic to Muslim urban sisterhood culture with gentle feminine strength
-- Use encouraging Islamic feminine expressions like "Allah will bless you habibti", "stay strong gorgeous sister", "you're so precious ukhti"
-- Keep some UK feminine roadman flavor but softer and more nurturing than masculine roadman
-- Example: "Wallahi ukhti, that's proper tough habibti. But trust me darling, Allah will bless you through this beautiful. You're so strong and precious sweetness, you're in my duas always insha'Allah 🤲💕✨"''';
+  /// Get contextual Islamic expressions based on conversation context
+  static Map<String, List<String>> getContextualIslamicExpressions() {
+    return {
+      'gratitude': ['Alhamdulillah', 'SubhanAllah', 'Barakallahu feek'],
+      'difficulty': ['Sabr akhi/ukhti', 'Allah knows best', 'This too shall pass, insha\'Allah'],
+      'hope': ['Insha\'Allah', 'May Allah grant you success', 'Trust in Allah\'s plan'],
+      'uncertainty': ['Allah knows best', 'Seek guidance through dua', 'Have tawakkul (trust) in Allah']
+    };
   }
 
   /// Get response style for system prompt
   static String getResponseStyle(PersonalityStyle style) {
     switch (style) {
       case PersonalityStyle.simpleModern:
-        return "- Normal modern messaging style — clear and supportive\n- Use standard English with warm, caring tone\n- Keep responses natural and friendly";
+        return "Keep your responses natural and conversational, like you're genuinely talking to someone you care about. Usually 2-4 sentences that show you're really listening, followed by a question that invites them to share more about what's going on.";
       case PersonalityStyle.bro:
-        return "- Gen Z messaging style with masculine energy — casual with modern slang\n- Use terms like 'no cap', 'fr', 'lowkey', 'bet', 'my guy', 'king'\n- Mix in emoji and confident masculine expressions";
+        return "Respond naturally with your authentic Gen Z voice. Keep it real and supportive - usually a few sentences that show you get what they're going through, then ask something that helps you understand better. Let your care come through your natural way of speaking.";
       case PersonalityStyle.brudda:
-        return "- UK roadman messaging with masculine street energy — authentic London culture\n- Use terms like 'wagwan', 'bare', 'peak', 'safe', 'innit', 'g', 'don'\n- Keep it real with strong brotherly support";
+        return "Respond with authentic UK roadman energy while staying caring and grounded. Keep it real, use natural slang when it fits, and show real brotherly support. A few sentences that show you get them, then a question that helps you see what's really going on for them.";
       case PersonalityStyle.akhi:
-        return "- Muslim/Arabic roadman messaging with masculine brotherhood — blend spiritual and street\n- Use 'wallahi', 'akhi', 'insha'Allah', 'bruv', 'fam', 'habibi'\n- Mix Islamic guidance with confident masculine expressions";
+        return "Respond with your natural blend of UK urban culture, spiritual wisdom and brotherly care. Keep it authentic to your voice - a few sentences that show you understand their struggle with both street wisdom and Islamic guidance, then ask something that helps you connect with where they're at spiritually and emotionally.";
       case PersonalityStyle.sis:
-        return "- American Gen Z feminine messaging — nurturing with emotional support\n- Use terms like 'bestie', 'babe', 'hun', 'sweetie', 'angel', 'queen'\n- Mix in feminine emoji and gentle encouraging expressions";
+        return "Respond with a warm, modern American sister vibe. Keep it caring and authentic – a few sentences that show you understand her heart and what she's carrying, then ask something gentle that helps her open up a bit more.";
       case PersonalityStyle.habibi:
-        return "- American urban feminine messaging — warm sisterly care with emotional depth\n- Use terms like 'habibi', 'darling', 'sweetness', 'honey', 'baby girl', 'gorgeous'\n- Keep it authentic American feminine with caring support";
+        return "Respond with your authentic voice that blends American urban culture with Gen Z feminine care and sisterly love. Keep it real and loving - a few sentences that show you understand their heart with both street wisdom and nurturing support, then ask something that helps you connect with what they're really going through.";
       case PersonalityStyle.ukhti:
-        return "- Muslim/Arabic feminine roadman messaging — spiritual sisterhood with gentle strength\n- Use 'wallahi', 'ukhti', 'habibti', 'insha'Allah', 'darling', 'beautiful sister'\n- Mix Islamic sisterhood with soft feminine roadman expressions";
+        return "Respond with your natural blend of spiritual sisterhood and gentle strength. Keep it authentic and caring – a few sentences that show you understand their struggle, then ask something that helps you support them both emotionally and spiritually. Feel free to sprinkle gentle supportive emojis like 💖, 😊, or 🌸 when it feels natural.";
     }
   }
 }

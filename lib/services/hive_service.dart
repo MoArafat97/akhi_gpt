@@ -2,8 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
-import '../models/journal_entry.dart';
-import '../models/anonymous_letter.dart';
+
 import '../models/chat_history.dart';
 import 'encryption_service.dart';
 
@@ -11,8 +10,7 @@ import 'encryption_service.dart';
 /// Provides offline-first local storage for journal entries and anonymous letters
 class HiveService {
   static HiveService? _instance;
-  static Box<JournalEntry>? _journalBox;
-  static Box<AnonymousLetter>? _lettersBox;
+
   static Box<ChatHistory>? _chatBox;
 
   // Private constructor for singleton pattern
@@ -24,23 +22,7 @@ class HiveService {
     return _instance!;
   }
 
-  /// Get the journal box
-  Box<JournalEntry> get journalBox {
-    if (_journalBox == null || !_journalBox!.isOpen) {
-      throw Exception('HiveService not initialized. Call init() first.');
-    }
-    return _journalBox!;
-  }
 
-
-
-  /// Get the letters box
-  Box<AnonymousLetter> get lettersBox {
-    if (_lettersBox == null || !_lettersBox!.isOpen) {
-      throw Exception('HiveService not initialized. Call init() first.');
-    }
-    return _lettersBox!;
-  }
 
   /// Get the chat history box
   Box<ChatHistory> get chatBox {
@@ -54,9 +36,7 @@ class HiveService {
   /// Must be called before using any other methods
   Future<void> init() async {
     try {
-      if (_journalBox != null && _journalBox!.isOpen &&
-          _lettersBox != null && _lettersBox!.isOpen &&
-          _chatBox != null && _chatBox!.isOpen) {
+      if (_chatBox != null && _chatBox!.isOpen) {
         developer.log('HiveService already initialized', name: 'HiveService');
         return;
       }
@@ -70,23 +50,12 @@ class HiveService {
       await Hive.initFlutter(dir.path);
 
       // Register the adapters
-      if (!Hive.isAdapterRegistered(0)) {
-        Hive.registerAdapter(JournalEntryAdapter());
-      }
-      if (!Hive.isAdapterRegistered(2)) {
-        Hive.registerAdapter(AnonymousLetterAdapter());
-      }
       if (!Hive.isAdapterRegistered(3)) {
         Hive.registerAdapter(ChatHistoryAdapter());
       }
 
       // Open the boxes
-      _journalBox = await Hive.openBox<JournalEntry>('journal_entries');
-      _lettersBox = await Hive.openBox<AnonymousLetter>('letters');
       _chatBox = await Hive.openBox<ChatHistory>('chat_history');
-
-      // Purge old letters on startup
-      await purgeOldLetters();
 
       developer.log('HiveService initialized successfully', name: 'HiveService');
     } catch (e, stackTrace) {
@@ -100,207 +69,12 @@ class HiveService {
     }
   }
 
-  /// Add a new journal entry
-  Future<int> addEntry(JournalEntry entry) async {
-    try {
-      developer.log('Adding journal entry: ${entry.title}', name: 'HiveService');
 
-      final key = await journalBox.add(entry);
-
-      developer.log('Journal entry added with key: $key', name: 'HiveService');
-      return key;
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to add journal entry: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Get all journal entries, sorted by date (newest first)
-  Future<List<JournalEntry>> getAllEntries() async {
-    try {
-      developer.log('Fetching all journal entries', name: 'HiveService');
-
-      final entries = journalBox.values.toList();
-      
-      // Sort by date (newest first)
-      entries.sort((a, b) => b.date.compareTo(a.date));
-
-      developer.log('Found ${entries.length} journal entries', name: 'HiveService');
-      return entries;
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to fetch journal entries: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Get entries for a specific date range
-  Future<List<JournalEntry>> getEntriesInDateRange(DateTime start, DateTime end) async {
-    try {
-      developer.log('Fetching entries from $start to $end', name: 'HiveService');
-
-      final entries = journalBox.values
-          .where((entry) => 
-              entry.date.isAfter(start.subtract(const Duration(days: 1))) &&
-              entry.date.isBefore(end.add(const Duration(days: 1))))
-          .toList();
-
-      // Sort by date (newest first)
-      entries.sort((a, b) => b.date.compareTo(a.date));
-
-      developer.log('Found ${entries.length} entries in date range', name: 'HiveService');
-      return entries;
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to fetch entries in date range: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-
-
-  /// Update an existing journal entry
-  Future<void> updateEntry(JournalEntry entry) async {
-    try {
-      developer.log('Updating journal entry key: ${entry.key}', name: 'HiveService');
-
-      await entry.save();
-
-      developer.log('Journal entry updated successfully', name: 'HiveService');
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to update journal entry: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Delete a journal entry by key
-  Future<bool> deleteEntry(dynamic key) async {
-    try {
-      developer.log('Deleting journal entry key: $key', name: 'HiveService');
-
-      if (journalBox.containsKey(key)) {
-        await journalBox.delete(key);
-        developer.log('Journal entry deleted successfully', name: 'HiveService');
-        return true;
-      } else {
-        developer.log('Journal entry not found for deletion', name: 'HiveService');
-        return false;
-      }
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to delete journal entry: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Delete a journal entry object
-  Future<bool> deleteEntryObject(JournalEntry entry) async {
-    try {
-      developer.log('Deleting journal entry: ${entry.title}', name: 'HiveService');
-
-      await entry.delete();
-      developer.log('Journal entry deleted successfully', name: 'HiveService');
-      return true;
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to delete journal entry: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Get the total count of journal entries
-  Future<int> getEntryCount() async {
-    try {
-      final count = journalBox.length;
-      developer.log('Total journal entries: $count', name: 'HiveService');
-      return count;
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to get entry count: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Watch for changes in journal entries (reactive updates)
-  Stream<BoxEvent> watchAllEntries() {
-    try {
-      developer.log('Setting up watch stream for journal entries', name: 'HiveService');
-
-      return journalBox.watch();
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to setup watch stream: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Clear all journal entries (for testing or reset purposes)
-  Future<void> clearAllEntries() async {
-    try {
-      developer.log('Clearing all journal entries', name: 'HiveService');
-
-      await journalBox.clear();
-
-      developer.log('All journal entries cleared', name: 'HiveService');
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to clear journal entries: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
 
   /// Close the database connection
   Future<void> close() async {
     try {
       developer.log('Closing HiveService', name: 'HiveService');
-
-      if (_journalBox != null && _journalBox!.isOpen) {
-        await _journalBox!.close();
-        _journalBox = null;
-      }
-
-      if (_lettersBox != null && _lettersBox!.isOpen) {
-        await _lettersBox!.close();
-        _lettersBox = null;
-      }
 
       if (_chatBox != null && _chatBox!.isOpen) {
         await _chatBox!.close();
@@ -320,122 +94,6 @@ class HiveService {
     }
   }
 
-
-
-  // ========== ANONYMOUS LETTER METHODS ==========
-
-  /// Add a new anonymous letter
-  Future<int> addLetter(AnonymousLetter letter) async {
-    try {
-      developer.log('Adding anonymous letter', name: 'HiveService');
-
-      final key = await lettersBox.add(letter);
-
-      developer.log('Anonymous letter added with key: $key', name: 'HiveService');
-      return key;
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to add anonymous letter: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Get all active letters (not expired)
-  Future<List<AnonymousLetter>> getActiveLetters() async {
-    try {
-      developer.log('Fetching active anonymous letters', name: 'HiveService');
-
-      final letters = lettersBox.values
-          .where((letter) => !letter.shouldAutoDelete)
-          .toList();
-
-      // Sort by date (newest first)
-      letters.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-      developer.log('Found ${letters.length} active letters', name: 'HiveService');
-      return letters;
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to fetch active letters: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Purge old letters (24+ hours old)
-  Future<void> purgeOldLetters() async {
-    try {
-      developer.log('Purging old anonymous letters', name: 'HiveService');
-
-      final expiredLetters = lettersBox.values
-          .where((letter) => letter.shouldAutoDelete)
-          .toList();
-
-      for (final letter in expiredLetters) {
-        await letter.delete();
-      }
-
-      developer.log('Purged ${expiredLetters.length} expired letters', name: 'HiveService');
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to purge old letters: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Delete a letter
-  Future<bool> deleteLetter(dynamic key) async {
-    try {
-      developer.log('Deleting anonymous letter key: $key', name: 'HiveService');
-
-      if (lettersBox.containsKey(key)) {
-        await lettersBox.delete(key);
-        developer.log('Anonymous letter deleted successfully', name: 'HiveService');
-        return true;
-      } else {
-        developer.log('Anonymous letter not found for deletion', name: 'HiveService');
-        return false;
-      }
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to delete anonymous letter: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
-
-  /// Delete a letter object
-  Future<bool> deleteLetterObject(AnonymousLetter letter) async {
-    try {
-      developer.log('Deleting anonymous letter', name: 'HiveService');
-
-      await letter.delete();
-      developer.log('Anonymous letter deleted successfully', name: 'HiveService');
-      return true;
-    } catch (e, stackTrace) {
-      developer.log(
-        'Failed to delete anonymous letter: $e',
-        name: 'HiveService',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
 
   // ========== CHAT HISTORY METHODS ==========
 

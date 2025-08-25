@@ -4,23 +4,20 @@ import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:dio/dio.dart';
 import '../lib/services/model_management_service.dart';
-import '../lib/services/user_api_key_service.dart';
 
 // Generate mocks
-@GenerateMocks([Dio, UserApiKeyService])
+@GenerateMocks([Dio])
 import 'model_management_service_test.mocks.dart';
 
 void main() {
   group('ModelManagementService Tests', () {
     late ModelManagementService service;
     late MockDio mockDio;
-    late MockUserApiKeyService mockApiKeyService;
 
     setUp(() {
       service = ModelManagementService.instance;
       mockDio = MockDio();
-      mockApiKeyService = MockUserApiKeyService();
-      
+
       // Initialize SharedPreferences with mock values
       SharedPreferences.setMockInitialValues({});
     });

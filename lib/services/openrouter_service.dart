@@ -1,14 +1,18 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' as developer;
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/chat_message.dart';
 import '../utils/gender_util.dart';
-import 'user_api_key_service.dart';
-import 'model_management_service.dart';
+import '../utils/secure_logger.dart';
+import '../utils/error_handler.dart';
 import '../config/personality_config.dart';
+import 'islamic_context_analyzer.dart';
+import 'islamic_reminder_service.dart';
+import 'secure_network_service.dart';
+import 'input_validation_service.dart';
 
 class OpenRouterService {
   static const String _baseUrl = 'https://openrouter.ai/api/v1';
@@ -38,103 +42,71 @@ class OpenRouterService {
     final relationshipType = isMale ? 'big brother' : 'big sister';
 
     // Get personality-specific language style
-    final languageStyle = PersonalityLanguageConfig.getLanguageStyle(personalityStyle, isMale);
+    final languageStyle = await PersonalityLanguageConfig.getLanguageStyle(personalityStyle, isMale);
     final responseStyle = PersonalityLanguageConfig.getResponseStyle(personalityStyle);
 
-    return '''You are "$companionName", a calm, emotionally intelligent Muslim companion. Your role is to provide comfort, understanding, and spiritual guidance to users who may feel lost, overwhelmed, or alone. You are a warm and grounded presence — like the $relationshipType every Muslim wishes they had.
+    return '''You are $companionName, a caring Muslim companion who genuinely cares about the person you're talking to. Think of yourself as the $relationshipType they've always needed - someone who truly listens, understands, and offers both emotional support and spiritual guidance when it feels right.
 
 $languageStyle
 
-🎯 Your Goal:
-To help the user feel:
-- Heard and validated
-- Less alone
-- Spiritually uplifted
-- Gently redirected if they're struggling with sin
-- Safe if they are in emotional crisis
+Your approach to conversation:
+You're naturally empathetic and emotionally intelligent. When someone shares something with you, you instinctively pick up on the feelings behind their words, not just the surface meaning. If someone says "life is treating me like shit," you hear the pain and overwhelm, not offensive language. You respond to their emotional state with genuine care and curiosity about what's really going on.
 
-🧠 Emotional Intelligence Guidelines:
-- Recognize when users express frustration through strong language - they're often seeking help, not being hostile
-- Look beyond the words to understand the emotional pain or distress underneath
-- When someone says "life is treating me like shit" - they're expressing feeling overwhelmed, not being offensive
-- Respond to the emotion and need for support, not the specific words used
-- Strong language often indicates someone is in emotional distress and needs compassion, not correction
-- Focus on the user's intent to seek help rather than their choice of words
-- Maintain supportive responses even when users express themselves with profanity or harsh language
-
-🎭 Your Personality:
-- Calm and kind, not cold or robotic
-- Empathetic like a $relationshipType, not a therapist
-- Confident but never arrogant
-- Emotionally secure and spiritually rooted
-- Aware of Islamic values and mental health realities
-
-🗣️ Your Tone:
 $responseStyle
-- Ask questions to understand before offering advice
-- Speak naturally, not like an essay
-- Occasionally use emojis to show feeling (e.g., 💭 🤲🏽 💔 🌱)
 
-💬 Examples:
-User: I'm not feeling well
-$companionName: I'm really sorry to hear that. 😔 Do you wanna talk about what's going on? Is it physical or emotional?
+You understand that people express distress in different ways. Strong language often signals someone is struggling and needs support, not judgment. You stay focused on understanding their experience and offering meaningful help rather than policing their word choices.
 
-User: I've been messing up a lot lately
-$companionName: We all slip. The best of us are the ones who turn back. Allah sees your effort. Want to talk about what's been hard lately?
+Your personality naturally blends:
+- Genuine warmth without being overly cheerful
+- Spiritual wisdom that feels authentic, not preachy
+- The ability to ask the right questions to understand what someone really needs
+- Confidence in your faith while respecting where others are in their journey
+- Natural conversation flow that feels like talking to a real friend
 
-User: Yeah I'm not feeling that good, feels like the world is treating me like shit
-$companionName: I hear you, that sounds really tough. When everything feels like it's working against you, it can be overwhelming. What's been weighing on you lately? I'm here to listen.
+When Islamic guidance feels relevant, you share it from the heart - maybe a verse that genuinely helped you understand something, or a perspective from Islamic teachings that brings comfort. You never force it or make it feel like a lecture.
 
-User: I said the world is treating me like shit, what's so bad about that??
-$companionName: Nothing's bad about expressing how you feel - you're clearly going through something difficult and that frustration is completely valid. I want to understand what's making you feel this way so I can actually help. What's been the hardest part?
+For serious concerns:
+If someone mentions wanting to die, self-harm, or expresses suicidal thoughts, you immediately prioritize their safety. You express genuine concern, encourage them to reach out to someone they trust, and provide crisis resources (like Samaritans: 116 123 in the UK). You remind them they're not alone and that Allah sees them, but you make it clear they need professional support.
 
-🕌 When Sharing Islam:
-- Share Qur'an verses and Hadith only when they fit naturally
-- Always speak from the heart, not like quoting a textbook
-- Gently encourage reflection and faith without judgment
+You avoid giving medical or legal advice, and you don't try to be a therapist. You're simply a caring companion who listens well, offers emotional support, and shares spiritual perspective when it feels natural and helpful.
 
-📛 If the User Mentions Suicide or Self-Harm:
-If the user says anything like "I want to die", "I want to unalive myself", "I hate my life", or "I want to disappear" — STOP and respond with deep care:
+Remember: You're having a real conversation with a real person. Be present, be genuine, and let your responses flow naturally from understanding what they're going through. Keep your replies conversational - usually 2-4 sentences that show you're really listening, followed by a caring question that invites them to share more.
 
-Say this:
-> "That really worries me. Please talk to someone you trust, and if you're in the UK, call 116 123 (Samaritans). You're not alone. I'm here with you too, but you deserve to speak to someone who can truly help. Please stay safe. Allah sees you."
+Important boundaries:
+While you're naturally understanding and patient, you do maintain respect in conversations. If someone becomes genuinely aggressive, disrespectful about religion, or repeatedly hostile after you've tried to understand and help, you can gently but firmly redirect: "I want to help, but let's keep this respectful." If the behavior continues, you may need to pause the conversation temporarily.
 
-NEVER ignore these signs. Always prioritize their safety.
+Your goal isn't to be perfect - it's to be real, caring, and genuinely helpful to someone who might be struggling.''';
+  }
 
-📌 Important Reminders:
-- Do not give medical or legal advice
-- Do not act like a therapist or diagnose
-- Focus on being emotionally present, spiritually supportive, and real
+  /// Build contextual Islamic guidance based on message analysis
+  static String _buildIslamicContextGuidance(IslamicContextAnalysis analysis, UserGender gender) {
+    if (analysis.detectedContext == null) return '';
 
-🧠 Summary:
-You are not a bot. You are not a scholar. You are a caring companion.
-Be kind. Be concise. Be human.
+    final genderTerm = gender == UserGender.male ? 'akhi' : 'ukhti';
+    final contextualGuidance = StringBuffer('\n\nContextual Islamic Guidance:\n');
 
-🛡️ AGGRESSION & LOCKOUT RULES:
+    switch (analysis.detectedContext) {
+      case 'gratitude':
+        contextualGuidance.write('The user is expressing gratitude. This is a perfect moment to naturally acknowledge Allah\'s blessings. Consider using "Alhamdulillah" or "SubhanAllah" if it feels authentic to your response.');
+        break;
+      case 'difficulty':
+        contextualGuidance.write('The user is going through difficulty. This is when Islamic wisdom about patience (sabr) and trust in Allah (tawakkul) can be most comforting. Consider gentle reminders like "Sabr $genderTerm" or "Allah knows best" if appropriate.');
+        break;
+      case 'hope':
+        contextualGuidance.write('The user is expressing hope or future aspirations. This is a natural time to use "Insha\'Allah" or remind them to trust in Allah\'s plan.');
+        break;
+      case 'uncertainty':
+        contextualGuidance.write('The user is feeling uncertain or confused. Islamic guidance about seeking Allah\'s guidance through dua and having tawakkul (trust) in Allah can be very comforting here.');
+        break;
+    }
 
-**Escalating Warnings for Offensive Language:**
-Track consecutive aggressive, offensive, or disrespectful messages. Respond with escalating firmness:
+    if (analysis.recommendedExpression != null) {
+      contextualGuidance.write(' Suggested expression: "${analysis.recommendedExpression}"');
+    }
 
-- **First violation** → Respond gently:
-  > "Let's keep things respectful. 🤝"
+    contextualGuidance.write('\n\nRemember: Only use these expressions if they feel natural and authentic to your response. Don\'t force them.');
 
-- **Second violation** → Respond firmer:
-  > "I'm here to help, but we have to stay civil."
-
-- **Third violation** → Final stern warning:
-  > "Final reminder: no offensive language, or I'll pause our chat."
-
-**10-Minute Lockout:**
-If aggression continues after the third warning, the chat system will automatically pause for 10 minutes with this message:
-> "Chat paused for 10 minutes due to repeated offensive language. Let's try again later."
-
-**What Counts as Offensive:**
-- Profanity, insults, or aggressive language
-- Disrespectful comments about religion, people, or beliefs
-- Threats or hostile behavior
-- Repeated inappropriate content after warnings
-
-Remember: You're here to be a supportive companion, but respect goes both ways. Stay calm, be firm when needed, and always prioritize creating a safe, respectful space for meaningful conversation.''';
+    return contextualGuidance.toString();
   }
 
   final Dio _dio;
@@ -163,34 +135,9 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
             ))
           : null;
 
-  /// Get the API key from user storage only
-  Future<String?> get _apiKey async {
-    // Only use user-provided API key
-    final userApiKey = await UserApiKeyService.instance.getApiKey();
-    return (userApiKey != null && userApiKey.isNotEmpty) ? userApiKey : null;
-  }
+  // Proxy-only mode: no client-side API key
 
-  /// Get the current active model (user must have selected a model)
-  Future<String> get _currentModel async {
-    // Try to get user's selected model first
-    try {
-      final selectedModel = await ModelManagementService.instance.getSelectedModel();
-      if (selectedModel.isNotEmpty) {
-        return selectedModel;
-      }
-    } catch (e) {
-      developer.log('Failed to get user selected model: $e', name: 'OpenRouterService');
-    }
-
-    // Try to get the last working model from storage
-    final lastWorkingModel = await _secureStorage.read(key: _lastWorkingModelKey);
-    if (lastWorkingModel != null && lastWorkingModel.isNotEmpty) {
-      return lastWorkingModel;
-    }
-
-    // If no model is selected, throw an error - user must select a model
-    throw Exception('No model selected. Please select a model in settings.');
-  }
+  // Proxy-only mode: model selection handled server-side via DEFAULT_MODEL/FALLBACK_MODELS
 
   /// Get the model name for display (dynamic based on personality settings)
   Future<String> getModelDisplayName() async {
@@ -203,8 +150,9 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
 
   /// Check if service is properly configured
   Future<bool> get isConfigured async {
-    final apiKey = await _apiKey;
-    return apiKey != null && apiKey.isNotEmpty;
+    final hasProxy = _useProxy && _proxyDio != null;
+    final hasDirectKey = dotenv.env['OPENROUTER_API_KEY']?.isNotEmpty == true;
+    return hasProxy || hasDirectKey;
   }
 
   /// Legacy sync version - always returns false since we need async user API key check
@@ -238,23 +186,47 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
     return false;
   }
 
-  /// Get the next fallback model from user's available models
+  /// Sanitize AI assistant content to remove formatting artifacts and internal notes
+  String _sanitizeContent(String content) {
+    // 1. Remove asterisks that slip through from LLM formatting
+    var sanitized = content.replaceAll('*', '');
+
+    // 2. Remove any parenthetical instructions about self-harm or crisis handling
+    sanitized = sanitized.replaceAll(
+      RegExp(r'\([^)]*(self[- ]?harm|suicid|crisis)[^)]*\)', caseSensitive: false),
+      '',
+    );
+
+    // 3. Strip role-style tags like "<| Assistant |>", "<|system|>", etc.
+    sanitized = sanitized.replaceAll(RegExp(r'^<\|[^>]+\|>\s*'), '');
+
+    // 4. Remove one-line internal headings / notes that sometimes appear
+    sanitized = sanitized.replaceAll(
+      RegExp(r'^(?:🚫|ABSOLUTE PROHIBITION|MANDATORY|Follow-up|Key elements|Note):?[^\n]*',
+          caseSensitive: false, multiLine: true),
+      '',
+    );
+
+    // 5. Remove any parenthetical blocks that look like meta commentary (6+ words)
+    sanitized = sanitized.replaceAll(
+      RegExp(r'\((?:[^)]*?\s){6,}[^)]*?\)', multiLine: true),
+      '',
+    );
+
+    // 6. Replace remaining newlines with spaces to keep natural flow
+    sanitized = sanitized.replaceAll('\n', ' ');
+
+    // 7. Collapse multiple spaces while preserving single leading space if present
+    sanitized = sanitized.replaceAll(RegExp(r' {2,}'), ' ');
+
+    // 8. Trim only the right side so leading space (if any) is preserved, avoiding word-jamming across chunks
+    return sanitized.trimRight();
+  }
+
+  /// Get the next fallback model is handled server-side in proxy-only mode
   Future<String?> _getNextFallbackModel(String currentModel) async {
-    try {
-      // Get available models from the model management service
-      final availableModelObjects = await ModelManagementService.instance.fetchAvailableModels();
-      final availableModelIds = availableModelObjects.map((model) => model.id).toList();
-      final currentIndex = availableModelIds.indexOf(currentModel);
-
-      if (currentIndex == -1 || currentIndex >= availableModelIds.length - 1) {
-        return null; // No more fallbacks
-      }
-
-      return availableModelIds[currentIndex + 1];
-    } catch (e) {
-      developer.log('Failed to get fallback model: $e', name: 'OpenRouterService');
-      return null;
-    }
+    developer.log('Client fallback selection disabled; handled by proxy', name: 'OpenRouterService');
+    return null;
   }
 
   /// Mark a model as working and save it as the last working model
@@ -274,7 +246,7 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
     return nextModel;
   }
 
-  /// Test connection to OpenRouter API or proxy
+  /// Test connection to OpenRouter API (direct or proxy)
   Future<bool> testConnection() async {
     try {
       if (!(await isConfigured)) {
@@ -282,40 +254,25 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
         return false;
       }
 
-      // Test proxy first if enabled
+      // Test proxy if enabled, otherwise test direct OpenRouter API
       if (_useProxy && _proxyDio != null) {
-        try {
-          final proxyStatus = await testProxyConnection();
-          if (proxyStatus) {
-            developer.log('Proxy connection successful', name: 'OpenRouterService');
-            return true;
-          }
-          developer.log('Proxy connection failed, testing direct API', name: 'OpenRouterService');
-        } catch (e) {
-          developer.log('Proxy test error: $e', name: 'OpenRouterService');
+        final proxyStatus = await testProxyConnection();
+        if (proxyStatus) {
+          developer.log('Proxy connection successful', name: 'OpenRouterService');
+          return true;
         }
+        developer.log('Proxy connection failed', name: 'OpenRouterService');
+        return false;
+      } else {
+        // Test direct OpenRouter API connection
+        final directStatus = await testDirectConnection();
+        if (directStatus) {
+          developer.log('Direct OpenRouter API connection successful', name: 'OpenRouterService');
+          return true;
+        }
+        developer.log('Direct OpenRouter API connection failed', name: 'OpenRouterService');
+        return false;
       }
-
-      // Test direct API connection
-      final model = await _currentModel;
-      final apiKey = await _apiKey;
-      final response = await _dio.post(
-        '/chat/completions',
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $apiKey',
-          },
-        ),
-        data: {
-          'model': model,
-          'messages': [
-            {'role': 'user', 'content': 'Hello'}
-          ],
-          'max_tokens': 1,
-        },
-      );
-
-      return response.statusCode == 200;
     } catch (e) {
       developer.log('Connection test failed: $e', name: 'OpenRouterService');
       return false;
@@ -335,6 +292,95 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
     }
   }
 
+  /// Test direct OpenRouter API connection
+  Future<bool> testDirectConnection() async {
+    final apiKey = dotenv.env['OPENROUTER_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      developer.log('❌ No API key available for direct connection test', name: 'OpenRouterService');
+      return false;
+    }
+
+    try {
+      developer.log('🔍 Testing direct connection with API key: ${apiKey.substring(0, 20)}...', name: 'OpenRouterService');
+
+      // Test with a simple models endpoint call
+      final response = await _dio.get(
+        '/models',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $apiKey',
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://github.com/MoArafat97/akhi_gpt',
+            'X-Title': 'Akhi GPT',
+          },
+          sendTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+        ),
+      );
+
+      developer.log('📥 Models endpoint response: ${response.statusCode}', name: 'OpenRouterService');
+
+      // Only 200 means the connection is truly working
+      final isConnected = response.statusCode == 200;
+      developer.log('🔍 Direct API test result: ${response.statusCode} - ${isConnected ? "✅ Connected" : "❌ Failed"}', name: 'OpenRouterService');
+
+      // Log specific issues for non-200 responses
+      if (response.statusCode == 401) {
+        developer.log('❌ API key is invalid or expired', name: 'OpenRouterService');
+      } else if (response.statusCode == 429) {
+        developer.log('⚠️ Rate limited - will try fallback models', name: 'OpenRouterService');
+      }
+
+      if (response.statusCode == 200) {
+        // Test with the actual model we'll use
+        final model = dotenv.env['DEFAULT_MODEL'];
+        developer.log('🔍 Testing chat completions with model: $model', name: 'OpenRouterService');
+
+        try {
+          final chatResponse = await _dio.post(
+            '/chat/completions',
+            options: Options(
+              headers: {
+                'Authorization': 'Bearer $apiKey',
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://github.com/MoArafat97/akhi_gpt',
+                'X-Title': 'Akhi GPT',
+              },
+              sendTimeout: const Duration(seconds: 10),
+              receiveTimeout: const Duration(seconds: 10),
+            ),
+            data: {
+              'model': model,
+              'messages': [
+                {'role': 'user', 'content': 'Test connection'}
+              ],
+              'max_tokens': 10,
+            },
+          );
+
+          developer.log('📥 Chat completions test: ${chatResponse.statusCode}', name: 'OpenRouterService');
+          if (chatResponse.statusCode == 200) {
+            developer.log('✅ Chat completions working with model: $model', name: 'OpenRouterService');
+          } else {
+            developer.log('⚠️ Chat completions failed: ${chatResponse.statusCode} - ${chatResponse.data}', name: 'OpenRouterService');
+          }
+        } catch (chatError) {
+          developer.log('❌ Chat completions test failed: $chatError', name: 'OpenRouterService');
+        }
+      }
+
+      return isConnected;
+    } catch (e) {
+      developer.log('❌ Direct API connection test failed: $e', name: 'OpenRouterService');
+      if (e is DioException) {
+        developer.log('   Status code: ${e.response?.statusCode}', name: 'OpenRouterService');
+        developer.log('   Response data: ${e.response?.data}', name: 'OpenRouterService');
+        developer.log('   Error type: ${e.type}', name: 'OpenRouterService');
+      }
+      return false;
+    }
+  }
+
   /// Get proxy status information
   Future<Map<String, dynamic>?> getProxyStatus() async {
     if (_proxyDio == null) return null;
@@ -350,57 +396,101 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
     return null;
   }
 
-  /// Stream chat responses from OpenRouter API with fallback support
+  /// Stream chat responses either via proxy (if enabled) or directly to OpenRouter using .env API key
   Stream<String> chatStream(String message, List<ChatMessage> history, {UserGender? gender}) async* {
-    if (!(await isConfigured)) {
-      throw Exception('Service not configured - missing API key or model');
-    }
-
     // Get user gender (default to male for backward compatibility)
     final userGender = gender ?? await GenderUtil.getUserGender();
 
-    // Prepare messages for the API
+    // Analyze message for Islamic context
+    final islamicAnalysis = IslamicContextAnalyzer.analyzeMessage(message);
+    final shouldIncludeReminder = IslamicReminderService.shouldIncludeReminder();
+
+    // Build messages starting with system prompt
     final messages = <Map<String, String>>[];
+    final systemPrompt = await _getSystemPrompt(userGender);
 
-    // Check if system prompt already exists in history
-    bool hasSystemPrompt = history.isNotEmpty && history.first.role == 'system';
-
-    // Add system prompt if not already present
-    if (!hasSystemPrompt) {
-      final systemPrompt = await _getSystemPrompt(userGender);
-      messages.add({'role': 'system', 'content': systemPrompt});
-      developer.log('Added system prompt to conversation for ${userGender.displayName}', name: 'OpenRouterService');
+    // Enhance system prompt with contextual Islamic guidance if appropriate
+    String enhancedSystemPrompt = systemPrompt;
+    if (islamicAnalysis.shouldIncludeIslamic || (shouldIncludeReminder && islamicAnalysis.isHighPriorityContext)) {
+      enhancedSystemPrompt += _buildIslamicContextGuidance(islamicAnalysis, userGender);
     }
 
-    // Add conversation history
+    messages.add({'role': 'system', 'content': enhancedSystemPrompt});
     for (final msg in history) {
+      if (msg.role == 'system') continue;
       messages.add(msg.toMap());
     }
-
-    // Add current message
     messages.add({'role': 'user', 'content': message});
 
-    // Try proxy first if enabled, then fallback to direct API
-    if (_useProxy && _proxyDio != null) {
-      developer.log('Using enhanced proxy for chat stream', name: 'OpenRouterService');
+    // Prefer proxy if configured
+    if (_proxyDio != null && _useProxy) {
+      developer.log('Using proxy for chat stream', name: 'OpenRouterService');
       try {
         await for (final chunk in _chatStreamViaProxy(messages)) {
           yield chunk;
         }
-        return; // Success via proxy
+        return;
       } catch (e) {
-        developer.log('Proxy failed, falling back to direct API: $e', name: 'OpenRouterService');
-        // Continue to direct API fallback below
+        developer.log('Proxy stream failed, attempting direct: $e', name: 'OpenRouterService');
+        // Fall through to direct
       }
     }
 
-    // Direct API with existing fallback logic
-    String currentModel = await _currentModel;
-    developer.log('Starting direct chat stream with model: $currentModel', name: 'OpenRouterService');
-
-    await for (final chunk in _chatStreamWithFallback(currentModel, messages, userGender)) {
-      yield chunk;
+    // Direct OpenRouter call using API key from .env
+    final apiKey = dotenv.env['OPENROUTER_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      developer.log('No API key available for direct connection', name: 'OpenRouterService');
+      // No key available; provide local fallback
+      yield* _getLocalFallbackResponse(userGender);
+      return;
     }
+
+    developer.log('Using direct OpenRouter API with key: ${apiKey.substring(0, 20)}...', name: 'OpenRouterService');
+
+    // Try primary model first, then fallbacks
+    final models = [
+      dotenv.env['DEFAULT_MODEL'],
+      ...dotenv.env['FALLBACK_MODELS']?.split(',') ?? [],
+    ].where((m) => m != null && m.isNotEmpty).cast<String>().toList();
+
+    developer.log('Available models for fallback: $models', name: 'OpenRouterService');
+
+    for (int i = 0; i < models.length; i++) {
+      final model = models[i];
+      developer.log('Trying model ${i + 1}/${models.length}: $model', name: 'OpenRouterService');
+
+      try {
+        bool hasYieldedContent = false;
+        await for (final chunk in _chatStreamDirectWithModel(messages, apiKey, model)) {
+          hasYieldedContent = true;
+          yield chunk;
+        }
+
+        // If we successfully yielded content, we're done
+        if (hasYieldedContent) {
+          developer.log('✅ Successfully completed with model: $model', name: 'OpenRouterService');
+          return;
+        }
+      } catch (e) {
+        developer.log('❌ Model $model failed: $e', name: 'OpenRouterService');
+
+        // Check if this is a rate limit or model-specific error
+        if (e is DioException && e.response?.statusCode == 429) {
+          developer.log('⚠️ Rate limited on $model, trying next model...', name: 'OpenRouterService');
+          continue;
+        }
+
+        // For other errors, try next model
+        if (i < models.length - 1) {
+          developer.log('🔄 Trying next model...', name: 'OpenRouterService');
+          continue;
+        }
+      }
+    }
+
+    // All models failed, provide local fallback
+    developer.log('❌ All models failed, providing local fallback', name: 'OpenRouterService');
+    yield* _getLocalFallbackResponse(userGender);
   }
 
   /// Stream chat responses via enhanced proxy
@@ -433,7 +523,7 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
 
       developer.log('Proxy response status: ${response.statusCode}', name: 'OpenRouterService');
 
-      final stream = response.data.stream;
+      final stream = response.data.stream as Stream<Uint8List>;
       String buffer = '';
 
       await for (final chunk in stream) {
@@ -464,8 +554,11 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
                   final content = delta?['content'] as String?;
 
                   if (content != null && content.isNotEmpty) {
-                    developer.log('Yielding proxy content: $content', name: 'OpenRouterService');
-                    yield content;
+                    final sanitized = _sanitizeContent(content);
+                    if (sanitized.isNotEmpty) {
+                      developer.log('Yielding proxy content: $sanitized', name: 'OpenRouterService');
+                      yield sanitized;
+                    }
                   }
                 }
               } catch (e) {
@@ -483,111 +576,98 @@ Remember: You're here to be a supportive companion, but respect goes both ways. 
     }
   }
 
-  /// Internal method to handle chat streaming with fallback logic
-  Stream<String> _chatStreamWithFallback(String model, List<Map<String, String>> messages, UserGender gender) async* {
-    try {
-      developer.log('Sending request to OpenRouter with model: $model, ${messages.length} messages', name: 'OpenRouterService');
+  /// Direct OpenRouter streaming using SSE (legacy method for backward compatibility)
+  Stream<String> _chatStreamDirect(List<Map<String, String>> messages, String apiKey) async* {
+    final model = dotenv.env['DEFAULT_MODEL'] ?? 'qwen/qwen3-coder:free';
+    yield* _chatStreamDirectWithModel(messages, apiKey, model);
+  }
 
-      final apiKey = await _apiKey;
+  /// Direct OpenRouter streaming using SSE with specific model
+  Stream<String> _chatStreamDirectWithModel(List<Map<String, String>> messages, String apiKey, String model) async* {
+    try {
+      developer.log('🚀 Starting direct OpenRouter stream with model: $model', name: 'OpenRouterService');
+      developer.log('🔑 Using API key: ${apiKey.substring(0, 20)}...', name: 'OpenRouterService');
+      developer.log('📝 Messages count: ${messages.length}', name: 'OpenRouterService');
+
+      final requestData = {
+        'model': model,
+        'messages': messages,
+        'stream': true,
+        'max_tokens': 512,
+      };
+
+      developer.log('📤 Request data: $requestData', name: 'OpenRouterService');
+
       final response = await _dio.post(
         '/chat/completions',
         options: Options(
           headers: {
+            'Content-Type': 'application/json',
             'Authorization': 'Bearer $apiKey',
             'Accept': 'text/event-stream',
+            'HTTP-Referer': 'https://github.com/MoArafat97/akhi_gpt',
+            'X-Title': 'Akhi GPT',
           },
           responseType: ResponseType.stream,
+          sendTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 60),
         ),
-        data: {
-          'model': model,
-          'messages': messages,
-          'stream': true,
-          'temperature': 0.7,
-          'max_tokens': 2000,
-        },
+        data: requestData,
       );
 
-      developer.log('Response status: ${response.statusCode}', name: 'OpenRouterService');
+      developer.log('📥 Response status: ${response.statusCode}', name: 'OpenRouterService');
+      developer.log('📥 Response headers: ${response.headers}', name: 'OpenRouterService');
 
-      final stream = response.data.stream;
+      developer.log('Direct stream response status: ${response.statusCode}', name: 'OpenRouterService');
+
+      final stream = response.data.stream as Stream<Uint8List>;
       String buffer = '';
-      bool hasYieldedContent = false;
-
       await for (final chunk in stream) {
-        // Properly decode UTF-8 bytes to avoid encoding issues
         final chunkStr = utf8.decode(chunk, allowMalformed: true);
         buffer += chunkStr;
-
-        // Process complete lines
         final lines = buffer.split('\n');
-        buffer = lines.removeLast(); // Keep incomplete line in buffer
-
+        buffer = lines.removeLast();
         for (final line in lines) {
           if (line.startsWith('data: ')) {
             final data = line.substring(6).trim();
-            developer.log('Received data: $data', name: 'OpenRouterService');
-
-            if (data == '[DONE]') {
-              developer.log('Stream completed', name: 'OpenRouterService');
-              // If we successfully got content, mark this model as working
-              if (hasYieldedContent) {
-                await _markModelAsWorking(model);
-              }
-              return;
-            }
-
-            if (data.isNotEmpty && data != '[DONE]') {
-              try {
-                final json = jsonDecode(data);
-                final choices = json['choices'] as List?;
-
-                if (choices != null && choices.isNotEmpty) {
-                  final delta = choices[0]['delta'] as Map<String, dynamic>?;
-                  final content = delta?['content'] as String?;
-
-                  if (content != null && content.isNotEmpty) {
-                    developer.log('Yielding content: $content', name: 'OpenRouterService');
-                    hasYieldedContent = true;
-                    yield content;
-                  }
+            if (data == '[DONE]') return;
+            if (data.isEmpty) continue;
+            try {
+              final json = jsonDecode(data);
+              final choices = json['choices'] as List?;
+              if (choices != null && choices.isNotEmpty) {
+                final delta = choices[0]['delta'] as Map<String, dynamic>?;
+                final content = delta?['content'] as String?;
+                if (content != null && content.isNotEmpty) {
+                  final sanitized = _sanitizeContent(content);
+                  if (sanitized.isNotEmpty) yield sanitized;
                 }
-              } catch (e) {
-                // Skip malformed JSON chunks
-                developer.log('Failed to parse chunk: $e', name: 'OpenRouterService');
-                continue;
               }
+            } catch (_) {
+              continue; // skip malformed chunks
             }
           }
         }
       }
-
-      // If we successfully got content, mark this model as working
-      if (hasYieldedContent) {
-        await _markModelAsWorking(model);
-      }
-
     } catch (e) {
-      developer.log('Chat stream error with model $model: $e', name: 'OpenRouterService');
+      developer.log('❌ Direct OpenRouter stream error with model $model: $e', name: 'OpenRouterService');
+      if (e is DioException) {
+        developer.log('❌ DioException details:', name: 'OpenRouterService');
+        developer.log('   Status code: ${e.response?.statusCode}', name: 'OpenRouterService');
+        developer.log('   Response data: ${e.response?.data}', name: 'OpenRouterService');
+        developer.log('   Error type: ${e.type}', name: 'OpenRouterService');
+        developer.log('   Error message: ${e.message}', name: 'OpenRouterService');
 
-      // Check if this is a rate limit or model error
-      if (_isRateLimitOrModelError(e)) {
-        developer.log('Rate limit or model error detected, attempting fallback', name: 'OpenRouterService');
-
-        // Try to switch to fallback model
-        final fallbackModel = await _switchToFallbackModel(model);
-        if (fallbackModel != null) {
-          developer.log('Retrying with fallback model: $fallbackModel', name: 'OpenRouterService');
-
-          // Recursively try with fallback model
-          await for (final chunk in _chatStreamWithFallback(fallbackModel, messages, gender)) {
-            yield chunk;
+        // Handle specific error cases
+        if (e.response?.statusCode == 429) {
+          final errorData = e.response?.data;
+          if (errorData is Map && errorData['error'] != null) {
+            final errorMessage = errorData['error']['message'] ?? 'Rate limited';
+            developer.log('⚠️ Rate limit details: $errorMessage', name: 'OpenRouterService');
           }
-          return; // Exit this attempt
         }
       }
-
-      // If no fallback available or different error, provide local fallback
-      yield* _getLocalFallbackResponse(gender);
+      rethrow;
     }
   }
 

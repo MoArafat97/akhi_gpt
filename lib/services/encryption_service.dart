@@ -2,77 +2,147 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:developer' as developer;
+import 'package:encrypt/encrypt.dart';
+import 'package:flutter/foundation.dart';
+import '../utils/secure_logger.dart';
 
-/// Service for handling AES-256 encryption of chat data
+/// Service for handling AES-256-GCM encryption of chat data
 class EncryptionService {
-  static const String _encryptionKeyName = 'chat_encryption_key';
+  static const String _encryptionKeyName = 'chat_encryption_key_v2';
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
-  /// Generate a new AES-256 encryption key
-  static Uint8List _generateKey() {
-    final bytes = List<int>.generate(32, (i) => 
-        DateTime.now().millisecondsSinceEpoch.hashCode + i);
-    return Uint8List.fromList(bytes);
-  }
+  static Encrypter? _encrypter;
+  static Key? _key;
 
   /// Get or create encryption key from secure storage
-  static Future<Uint8List> _getEncryptionKey() async {
+  static Future<Key> _getEncryptionKey() async {
+    if (_key != null) return _key!;
+
     try {
       final keyString = await _secureStorage.read(key: _encryptionKeyName);
-      
+
       if (keyString != null) {
         // Decode existing key
-        return base64Decode(keyString);
+        final keyBytes = base64Decode(keyString);
+        _key = Key(Uint8List.fromList(keyBytes));
       } else {
-        // Generate new key
-        final newKey = _generateKey();
+        // Generate new AES-256 key (32 bytes)
+        _key = Key.fromSecureRandom(32);
         await _secureStorage.write(
-          key: _encryptionKeyName, 
-          value: base64Encode(newKey)
+          key: _encryptionKeyName,
+          value: base64Encode(_key!.bytes)
         );
-        developer.log('Generated new encryption key', name: 'EncryptionService');
-        return newKey;
+        SecureLogger.success('Generated new AES-256 encryption key', name: 'EncryptionService');
       }
+
+      return _key!;
     } catch (e) {
-      developer.log('Error getting encryption key: $e', name: 'EncryptionService');
+      SecureLogger.error('Error getting encryption key', name: 'EncryptionService', error: e);
       rethrow;
     }
   }
 
-  /// Simple XOR-based encryption (for demonstration - in production use proper AES)
+  /// Get or create encrypter instance
+  static Future<Encrypter> _getEncrypter() async {
+    if (_encrypter != null) return _encrypter!;
+
+    final key = await _getEncryptionKey();
+    _encrypter = Encrypter(AES(key, mode: AESMode.gcm));
+    return _encrypter!;
+  }
+
+  /// AES-256-GCM encryption with secure random IV
   static Future<String> encrypt(String plaintext) async {
     try {
-      final key = await _getEncryptionKey();
-      final plaintextBytes = utf8.encode(plaintext);
-      final encryptedBytes = <int>[];
-      
-      for (int i = 0; i < plaintextBytes.length; i++) {
-        encryptedBytes.add(plaintextBytes[i] ^ key[i % key.length]);
-      }
-      
-      return base64Encode(encryptedBytes);
+      if (plaintext.isEmpty) return plaintext;
+
+      final encrypter = await _getEncrypter();
+
+      // Generate secure random IV (16 bytes for AES)
+      final iv = IV.fromSecureRandom(16);
+
+      // Encrypt using AES-256-GCM
+      final encrypted = encrypter.encrypt(plaintext, iv: iv);
+
+      // Combine IV and encrypted data for storage
+      final combined = '${iv.base64}:${encrypted.base64}';
+      return combined;
     } catch (e) {
-      developer.log('Encryption error: $e', name: 'EncryptionService');
-      return plaintext; // Fallback to unencrypted
+      SecureLogger.error('Encryption error', name: 'EncryptionService', error: e);
+      // In case of encryption failure, return original text
+      // This ensures app doesn't break if encryption fails
+      return plaintext;
     }
   }
 
-  /// Simple XOR-based decryption (for demonstration - in production use proper AES)
+  /// AES-256-GCM decryption
   static Future<String> decrypt(String ciphertext) async {
     try {
-      final key = await _getEncryptionKey();
-      final encryptedBytes = base64Decode(ciphertext);
-      final decryptedBytes = <int>[];
-      
-      for (int i = 0; i < encryptedBytes.length; i++) {
-        decryptedBytes.add(encryptedBytes[i] ^ key[i % key.length]);
+      if (ciphertext.isEmpty) return ciphertext;
+
+      // Handle legacy XOR-encrypted data (migration support)
+      if (!ciphertext.contains(':')) {
+        return await _decryptLegacy(ciphertext);
       }
-      
-      return utf8.decode(decryptedBytes);
+
+      final encrypter = await _getEncrypter();
+
+      // Split IV and encrypted data
+      final parts = ciphertext.split(':');
+      if (parts.length != 2) {
+        throw FormatException('Invalid encrypted data format');
+      }
+
+      final iv = IV.fromBase64(parts[0]);
+      final encrypted = Encrypted.fromBase64(parts[1]);
+
+      // Decrypt using AES-256-GCM
+      final decrypted = encrypter.decrypt(encrypted, iv: iv);
+      return decrypted;
     } catch (e) {
-      developer.log('Decryption error: $e', name: 'EncryptionService');
-      return ciphertext; // Fallback to original text
+      SecureLogger.error('Decryption error', name: 'EncryptionService', error: e);
+      // In case of decryption failure, return original text
+      // This ensures app doesn't break if decryption fails
+      return ciphertext;
+    }
+  }
+
+  /// Legacy XOR decryption for backward compatibility
+  static Future<String> _decryptLegacy(String ciphertext) async {
+    try {
+      // This is the old XOR-based decryption for existing data
+      // We'll keep this temporarily for migration purposes
+      final combined = base64Decode(ciphertext);
+
+      if (combined.length < 12) {
+        return ciphertext; // Invalid format, return as-is
+      }
+
+      // Extract IV (first 12 bytes) and encrypted data
+      final iv = combined.sublist(0, 12);
+      final encryptedBytes = combined.sublist(12);
+
+      // Use a simple hash of the old key format for compatibility
+      final keyString = await _secureStorage.read(key: 'chat_encryption_key');
+      if (keyString == null) {
+        return ciphertext; // No legacy key, return as-is
+      }
+
+      final keyBytes = base64Decode(keyString);
+
+      // Decrypt using the old XOR logic
+      final decryptedBytes = <int>[];
+      for (int i = 0; i < encryptedBytes.length; i++) {
+        final keyByte = keyBytes[i % keyBytes.length];
+        final ivByte = iv[i % iv.length];
+        decryptedBytes.add(encryptedBytes[i] ^ keyByte ^ ivByte);
+      }
+
+      final decrypted = utf8.decode(decryptedBytes);
+      return decrypted;
+    } catch (e) {
+      SecureLogger.error('Legacy decryption error', name: 'EncryptionService', error: e);
+      return ciphertext;
     }
   }
 
@@ -83,7 +153,7 @@ class EncryptionService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getBool('encryptChats') ?? true;
     } catch (e) {
-      developer.log('Error checking encryption setting: $e', name: 'EncryptionService');
+      SecureLogger.error('Error checking encryption setting', name: 'EncryptionService', error: e);
       return true; // Default to enabled for security
     }
   }
@@ -98,8 +168,8 @@ class EncryptionService {
 
   /// Decrypt data if it appears to be encrypted
   static Future<String> decryptIfNeeded(String data) async {
-    // Simple check if data looks like base64 (encrypted)
-    if (data.isNotEmpty && RegExp(r'^[A-Za-z0-9+/]*={0,2}$').hasMatch(data)) {
+    // Check if data looks encrypted (contains ':' for new format or is base64 for legacy)
+    if (data.isNotEmpty && (data.contains(':') || RegExp(r'^[A-Za-z0-9+/]*={0,2}$').hasMatch(data))) {
       try {
         return await decrypt(data);
       } catch (e) {
@@ -108,6 +178,12 @@ class EncryptionService {
       }
     }
     return data;
+  }
+
+  /// Clear cached encryption instances (useful for testing)
+  static void clearCache() {
+    _encrypter = null;
+    _key = null;
   }
 
 

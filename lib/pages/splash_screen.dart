@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../utils/gender_util.dart';
-import '../services/user_api_key_service.dart';
-import '../services/openrouter_service.dart';
+import '../services/terms_acceptance_service.dart';
+// import '../services/openrouter_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -35,27 +35,19 @@ class _SplashScreenState extends State<SplashScreen> {
         return;
       }
 
-      // Check if OpenRouter service is configured (either via environment or user API key)
-      final openRouterService = OpenRouterService();
-      final isServiceConfigured = await openRouterService.isConfigured;
+      // User has seen onboarding, now check if they've accepted Terms and Conditions
+      final hasAcceptedTerms = await TermsAcceptanceService.hasAcceptedTerms();
 
-      if (isServiceConfigured) {
-        // Service is configured (via environment or user key), go to main app
-        Navigator.pushReplacementNamed(context, '/card_navigation');
-      } else {
-        // Service not configured, check if user has their own API key
-        final apiKeyStatus = await UserApiKeyService.instance.getApiKeyStatus();
-
-        if (apiKeyStatus == ApiKeyStatus.notSet) {
-          // User needs to set up their API key
-          Navigator.pushReplacementNamed(context, '/openrouter_setup');
-        } else {
-          // User has API key, go to main app
-          Navigator.pushReplacementNamed(context, '/card_navigation');
-        }
+      if (!hasAcceptedTerms) {
+        // User must accept Terms and Conditions before accessing the app
+        Navigator.pushReplacementNamed(context, '/terms_conditions');
+        return;
       }
+
+      // All requirements met, proceed to main app
+      Navigator.pushReplacementNamed(context, '/card_navigation');
     } catch (e) {
-      // On error, default to onboarding
+      // On error, default to onboarding for safety
       Navigator.pushReplacementNamed(context, '/onboard1');
     }
   }
@@ -93,10 +85,14 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.chat_bubble_outline,
-                  size: 60,
-                  color: Colors.white,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(30),
+                  child: Image.asset(
+                    'images/nafs-ai.jpg',
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
               

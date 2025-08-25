@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/subscription_service.dart';
 import '../services/message_counter_service.dart';
-import '../pages/paywall_screen.dart';
+
 
 class SubscriptionStatusWidget extends StatefulWidget {
   const SubscriptionStatusWidget({super.key});
@@ -277,18 +277,14 @@ class _SubscriptionStatusWidgetState extends State<SubscriptionStatusWidget> {
   }
 
   Future<void> _showPaywall() async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (context) => const PaywallScreen(),
-      ),
-    );
-    
-    if (result == true) {
-      // Refresh subscription status
-      await SubscriptionService.instance.refreshSubscriptionStatus();
-      if (mounted) {
-        setState(() {});
-      }
+    // Paywall removed - show message
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Premium features are now available to all users!'),
+          backgroundColor: Colors.green,
+        ),
+      );
     }
   }
 

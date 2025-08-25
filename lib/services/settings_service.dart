@@ -48,15 +48,15 @@ class SettingsService {
   
   /// Check if a developer route should be accessible
   static Future<bool> canAccessDeveloperRoute(String routeName) async {
-    final developerRoutes = ['/diagnostics', '/onboard1', '/onboard2', '/onboard3', 
-                           '/onboard4', '/onboard5', '/onboard6', '/onboard7a', 
-                           '/onboard7b', '/onboard7c', '/onboard8', '/onboard9', 
+    final developerRoutes = ['/diagnostics', '/admin', '/onboard1', '/onboard2', '/onboard3',
+                           '/onboard4', '/onboard5', '/onboard6', '/onboard7a',
+                           '/onboard7b', '/onboard7c', '/onboard8', '/onboard9',
                            '/onboard10', '/onboard12'];
-    
+
     if (!developerRoutes.contains(routeName)) {
       return true; // Not a developer route, allow access
     }
-    
+
     return await isDeveloperModeEnabled();
   }
 }

@@ -18,9 +18,9 @@ void main() {
     late MockFlutterSecureStorage mockStorage;
 
     setUp(() {
-      // Initialize dotenv with test values (no API key - user must provide)
+      // Initialize dotenv with test values (proxy enabled)
       dotenv.testLoad(fileInput: '''
-ENABLE_PROXY=false
+ENABLE_PROXY=true
 PROXY_ENDPOINT=http://localhost:8080
 ''');
 
@@ -30,15 +30,8 @@ PROXY_ENDPOINT=http://localhost:8080
     });
 
     group('Configuration Tests', () {
-      test('should not be configured without user API key', () async {
-        // Service should not be configured since no user API key is provided
-        expect(await service.isConfigured, isFalse);
-      });
-
-      test('should require user API key for configuration', () async {
-        // Without user API key, service should not be configured
-        final testService = OpenRouterService();
-        expect(await testService.isConfigured, isFalse);
+      test('should be configured when proxy is enabled and endpoint set', () async {
+        expect(await service.isConfigured, isTrue);
       });
     });
 
@@ -95,12 +88,8 @@ PROXY_ENDPOINT=http://localhost:8080
     });
 
     group('Environment Variable Tests', () {
-      test('should not have API key in environment (user-provided only)', () {
-        expect(dotenv.env['OPENROUTER_API_KEY'], isNull);
-      });
-
-      test('should handle proxy configuration', () {
-        expect(dotenv.env['ENABLE_PROXY'], equals('false'));
+      test('should read proxy configuration', () {
+        expect(dotenv.env['ENABLE_PROXY'], equals('true'));
         expect(dotenv.env['PROXY_ENDPOINT'], equals('http://localhost:8080'));
       });
     });

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
+import 'utils/secure_logger.dart';
 // import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'services/hive_service.dart';
-import 'services/openrouter_service.dart';
+import 'services/openrouter_service.dart'; // Proxy-only mode uses backend key
 import 'services/subscription_service.dart';
 import 'services/message_counter_service.dart';
 import 'services/secure_config_service.dart';
@@ -27,13 +28,13 @@ import 'pages/dashboard.dart';
 import 'pages/card_navigation_page.dart';
 import 'pages/chat_screen.dart';
 import 'pages/chat_page.dart';
-import 'pages/journal_page.dart';
-import 'pages/analytics_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/diagnostic_page.dart';
 import 'pages/splash_screen.dart';
-import 'pages/paywall_screen.dart';
-import 'pages/openrouter_setup_page.dart';
+import 'pages/terms_conditions_page.dart';
+
+// Setup page removed in proxy-only mode
+
 import 'services/settings_service.dart';
 
 /// Generate routes with developer mode protection
@@ -55,20 +56,14 @@ Route<dynamic>? _generateRoute(RouteSettings settings) {
     '/onboard9': (context) => const IntroPageEight(),
     '/onboard10': (context) => const IntroPageNine(),
     '/onboard12': (context) => const IntroPageEleven(),
+    '/terms_conditions': (context) => const TermsConditionsPage(isMandatory: true),
     '/dashboard': (context) => const Dashboard(),
     '/card_navigation': (context) => const CardNavigationPage(),
     '/chat': (context) => const ChatScreen(),
     '/chat_page': (context) => const ChatPage(),
-    '/journal': (context) => const JournalPage(),
-    '/analytics': (context) => const AnalyticsPage(),
     '/settings': (context) => const SettingsPage(),
-    '/paywall': (context) => const PaywallScreen(),
+
     '/diagnostics': (context) => const DiagnosticPage(),
-    '/openrouter_setup': (context) {
-      final args = settings.arguments as Map<String, dynamic>?;
-      final isInitialSetup = args?['isInitialSetup'] ?? false;
-      return OpenRouterSetupPage(isInitialSetup: isInitialSetup);
-    },
   };
 
   final builder = routes[routeName];
@@ -110,47 +105,47 @@ Route<dynamic>? _generateRoute(RouteSettings settings) {
 }
 
 void main() async {
-  print('🔥🔥🔥 MAIN FUNCTION STARTED 🔥🔥🔥');
+  SecureLogger.info('Application starting', name: 'Main');
   WidgetsFlutterBinding.ensureInitialized();
-  print('🔥 MAIN: Flutter binding initialized');
+  SecureLogger.success('Flutter binding initialized', name: 'Main');
 
   // Log debug configuration
   if (DebugConfig.hasDebugFlags) {
-    print('🔧 DEBUG: Debug flags enabled: ${DebugConfig.debugStatus}');
+    SecureLogger.debug('Debug flags enabled: ${DebugConfig.debugStatus}', name: 'Main');
   }
 
   try {
-    print('🔥 MAIN: Attempting to load .env file...');
+    SecureLogger.info('Loading environment configuration', name: 'Main');
     await dotenv.load(fileName: ".env");
-    print('🔥 MAIN: .env file loaded successfully');
-    print('🔥 MAIN: Environment variables loaded: ${dotenv.env.keys.toList()}');
+    SecureLogger.success('Environment configuration loaded', name: 'Main');
 
     // Enhanced configuration validation
     final apiKey = dotenv.env['OPENROUTER_API_KEY'];
-    print('🔥 MAIN: API Key: ${apiKey != null ? "✅ Found (${apiKey.length} chars)" : "❌ Not found"}');
-    if (apiKey != null) {
-      print('🔥 MAIN: API Key starts with: ${apiKey.substring(0, 10)}...');
-      print('🔥 MAIN: API Key format valid: ${apiKey.startsWith('sk-or-v1-') ? "✅" : "❌"}');
+    SecureLogger.logConfig('OpenRouter API Key', apiKey != null && apiKey.isNotEmpty);
+    if (apiKey != null && kDebugMode) {
+      SecureLogger.debug('API Key: ${SecureLogger.obfuscateApiKey(apiKey)}', name: 'Main');
+      SecureLogger.debug('API Key format valid: ${apiKey.startsWith('sk-or-v1-')}', name: 'Main');
     }
 
     // Validate models
     final defaultModel = dotenv.env['DEFAULT_MODEL'];
     final fallbackModels = dotenv.env['FALLBACK_MODELS'];
-    print('🔥 MAIN: Default Model: ${defaultModel ?? "❌ Not set"}');
-    print('🔥 MAIN: Fallback Models: ${fallbackModels ?? "❌ Not set"}');
+    SecureLogger.logConfig('Default Model', defaultModel != null && defaultModel.isNotEmpty);
+    SecureLogger.logConfig('Fallback Models', fallbackModels != null && fallbackModels.isNotEmpty);
 
-    if (fallbackModels != null) {
+    if (fallbackModels != null && kDebugMode) {
       final models = fallbackModels.split(',').map((m) => m.trim()).toList();
-      print('🔥 MAIN: Fallback Models Count: ${models.length}');
-      print('🔥 MAIN: Fallback Models List: $models');
+      SecureLogger.debug('Fallback Models Count: ${models.length}', name: 'Main');
+      SecureLogger.debug('Fallback Models: ${models.join(', ')}', name: 'Main');
     }
 
     // Validate proxy configuration
     final enableProxy = dotenv.env['ENABLE_PROXY'];
     final proxyEndpoint = dotenv.env['PROXY_ENDPOINT'];
-    print('🔥 MAIN: Proxy Enabled: ${enableProxy ?? "false"}');
-    if (enableProxy?.toLowerCase() == 'true') {
-      print('🔥 MAIN: Proxy Endpoint: ${proxyEndpoint ?? "❌ Not set"}');
+    final proxyEnabled = enableProxy?.toLowerCase() == 'true';
+    SecureLogger.logConfig('Proxy', proxyEnabled);
+    if (proxyEnabled && kDebugMode) {
+      SecureLogger.debug('Proxy Endpoint: ${proxyEndpoint ?? "Not set"}', name: 'Main');
     }
 
     // Quick validation check
@@ -162,47 +157,45 @@ void main() async {
                               fallbackModels != null &&
                               fallbackModels.isNotEmpty;
 
-    print('🔥 MAIN: Basic Configuration Valid: ${isBasicConfigValid ? "✅" : "❌"}');
+    SecureLogger.logConfig('Basic Configuration', isBasicConfigValid);
 
     if (!isBasicConfigValid) {
-      print('🔥 MAIN: ⚠️ Configuration issues detected - app may not function properly');
-      print('🔥 MAIN: ⚠️ Please check your .env file configuration');
+      SecureLogger.warning('Configuration issues detected - app may not function properly', name: 'Main');
+      SecureLogger.warning('Please check your .env file configuration', name: 'Main');
     }
 
     // Log secure configuration status
     SecureConfigService.instance.logConfigurationStatus();
 
   } catch (e) {
-    print('🔥 MAIN: ❌ Error loading .env: $e');
-    print('🔥 MAIN: Error type: ${e.runtimeType}');
-    print('🔥 MAIN: Error details: $e');
-    print('🔥 MAIN: ⚠️ App will start but may not function properly without proper configuration');
+    SecureLogger.error('Error loading environment configuration', name: 'Main', error: e);
+    SecureLogger.warning('App will start but may not function properly without proper configuration', name: 'Main');
   }
 
   try {
     // Initialize Hive database for local storage
     await HiveService.instance.init();
-    developer.log('✅ Hive database initialized successfully', name: 'Main');
+    SecureLogger.success('Hive database initialized successfully', name: 'Main');
   } catch (e) {
-    developer.log('❌ Failed to initialize Hive database: $e', name: 'Main');
+    SecureLogger.error('Failed to initialize Hive database', name: 'Main', error: e);
     // Continue without database - app will show error in journal page
   }
 
   try {
-    // Initialize subscription service
+    // Initialize subscription service (RevenueCat removed)
     await SubscriptionService.instance.initialize();
-    developer.log('✅ Subscription service initialized successfully', name: 'Main');
+    SecureLogger.success('Subscription service initialized successfully', name: 'Main');
   } catch (e) {
-    developer.log('❌ Failed to initialize subscription service: $e', name: 'Main');
-    // Continue without subscription service - app will default to free tier
+    SecureLogger.error('Failed to initialize subscription service', name: 'Main', error: e);
+    // Continue without subscription service - app will default to premium tier
   }
 
   try {
-    // Initialize message counter service
+    // Initialize message counter service (RevenueCat removed)
     await MessageCounterService.instance.initialize();
-    developer.log('✅ Message counter service initialized successfully', name: 'Main');
+    SecureLogger.success('Message counter service initialized successfully', name: 'Main');
   } catch (e) {
-    developer.log('❌ Failed to initialize message counter service: $e', name: 'Main');
+    SecureLogger.error('Failed to initialize message counter service', name: 'Main', error: e);
     // Continue without message counter - app will allow unlimited messages
   }
 
@@ -217,6 +210,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'NafsAI',
       theme: AppTheme.companionTheme,
+      debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
         // AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

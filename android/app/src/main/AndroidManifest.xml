@@ -5,7 +5,7 @@
     <application
         android:label="NafsAI"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/launcher_icon"
         android:enableOnBackInvokedCallback="true">
         <activity
             android:name="com.moarafat.nafs_ai.MainActivity"
@@ -44,6 +44,15 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- Required for url_launcher to work on Android 11+ -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
         </intent>
     </queries>
 </manifest>

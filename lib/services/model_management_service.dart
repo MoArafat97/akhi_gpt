@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'user_api_key_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Service for managing OpenRouter model selection and caching
 class ModelManagementService {
@@ -56,10 +56,10 @@ class ModelManagementService {
       }
     }
 
-    // Get user's API key
-    final apiKey = await UserApiKeyService.instance.getApiKey();
+    // Get backend API key from environment
+    final apiKey = dotenv.env['OPENROUTER_API_KEY'];
     if (apiKey == null || apiKey.isEmpty) {
-      throw Exception('No API key available. Please set your OpenRouter API key first.');
+      throw Exception('Backend API key not configured. Please contact support.');
     }
 
     try {
