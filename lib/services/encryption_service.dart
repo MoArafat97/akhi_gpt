@@ -2,8 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:encrypt/encrypt.dart' hide Key;
-import 'package:encrypt/encrypt.dart' as encrypt show Key;
+import 'package:encrypt/encrypt.dart' as crypto_encrypt;
 import 'package:flutter/foundation.dart';
 import '../utils/secure_logger.dart';
 
@@ -12,11 +11,11 @@ class EncryptionService {
   static const String _encryptionKeyName = 'chat_encryption_key_v2';
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
-  static Encrypter? _encrypter;
-  static encrypt.Key? _key;
+  static crypto_encrypt.Encrypter? _encrypter;
+  static crypto_encrypt.Key? _key;
 
   /// Get or create encryption key from secure storage
-  static Future<encrypt.Key> _getEncryptionKey() async {
+  static Future<crypto_encrypt.Key> _getEncryptionKey() async {
     if (_key != null) return _key!;
 
     try {
@@ -25,10 +24,10 @@ class EncryptionService {
       if (keyString != null) {
         // Decode existing key
         final keyBytes = base64Decode(keyString);
-        _key = encrypt.Key(Uint8List.fromList(keyBytes));
+        _key = crypto_encrypt.Key(Uint8List.fromList(keyBytes));
       } else {
         // Generate new AES-256 key (32 bytes)
-        _key = encrypt.Key.fromSecureRandom(32);
+        _key = crypto_encrypt.Key.fromSecureRandom(32);
         await _secureStorage.write(
           key: _encryptionKeyName,
           value: base64Encode(_key!.bytes)
@@ -44,11 +43,11 @@ class EncryptionService {
   }
 
   /// Get or create encrypter instance
-  static Future<Encrypter> _getEncrypter() async {
+  static Future<crypto_encrypt.Encrypter> _getEncrypter() async {
     if (_encrypter != null) return _encrypter!;
 
     final key = await _getEncryptionKey();
-    _encrypter = Encrypter(AES(key, mode: AESMode.gcm));
+    _encrypter = crypto_encrypt.Encrypter(crypto_encrypt.AES(key, mode: crypto_encrypt.AESMode.gcm));
     return _encrypter!;
   }
 
@@ -60,7 +59,7 @@ class EncryptionService {
       final encrypter = await _getEncrypter();
 
       // Generate secure random IV (16 bytes for AES)
-      final iv = IV.fromSecureRandom(16);
+      final iv = crypto_encrypt.IV.fromSecureRandom(16);
 
       // Encrypt using AES-256-GCM
       final encrypted = encrypter.encrypt(plaintext, iv: iv);
@@ -94,8 +93,8 @@ class EncryptionService {
         throw FormatException('Invalid encrypted data format');
       }
 
-      final iv = IV.fromBase64(parts[0]);
-      final encrypted = Encrypted.fromBase64(parts[1]);
+      final iv = crypto_encrypt.IV.fromBase64(parts[0]);
+      final encrypted = crypto_encrypt.Encrypted.fromBase64(parts[1]);
 
       // Decrypt using AES-256-GCM
       final decrypted = encrypter.decrypt(encrypted, iv: iv);
