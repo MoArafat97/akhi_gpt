@@ -830,44 +830,40 @@ class _ChatScreenState extends State<ChatScreen> {
                         ],
                       ),
                     ),
-                    // Action icons like in the image
-                    IconButton(
-                      icon: const Icon(Icons.add_box_outlined, color: Color(0xFF8B5A3C)),
-                      onPressed: _startNewChat,
-                      tooltip: 'New chat',
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.bookmark_border, color: Color(0xFF8B5A3C)),
-                      onPressed: () {}, // Save functionality
-                      tooltip: 'Save',
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.refresh, color: Color(0xFF8B5A3C)),
-                      onPressed: () {}, // Refresh functionality
-                      tooltip: 'Refresh',
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Color(0xFF8B5A3C)),
-                      onPressed: () {}, // Delete functionality
-                      tooltip: 'Delete',
-                    ),
-                  ],
-                ),
-              ),
-                          value: 'clear',
-                          child: Row(
-                            children: [
-                              const Icon(Icons.delete_outline, color: Color(0xFF7B4F2F), size: 20),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Clear Chat',
-                                style: GoogleFonts.inter(
-                                  color: const Color(0xFF7B4F2F),
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
+                    // Action icons with better spacing
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.add_box_outlined, color: Color(0xFF8B5A3C), size: 22),
+                          onPressed: _startNewChat,
+                          tooltip: 'New chat',
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(Icons.bookmark_border, color: Color(0xFF8B5A3C), size: 22),
+                          onPressed: () {}, // Save functionality
+                          tooltip: 'Save',
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(Icons.refresh, color: Color(0xFF8B5A3C), size: 22),
+                          onPressed: () {}, // Refresh functionality
+                          tooltip: 'Refresh',
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Color(0xFF8B5A3C), size: 22),
+                          onPressed: () {}, // Delete functionality
+                          tooltip: 'Delete',
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                         ),
                       ],
                     ),
