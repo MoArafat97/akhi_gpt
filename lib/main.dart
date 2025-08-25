@@ -13,6 +13,7 @@ import 'theme/app_theme.dart';
 
 import 'pages/chat_screen.dart';
 import 'pages/chat_page.dart';
+import 'pages/chat_history_page.dart';
 import 'pages/dashboard.dart';
 import 'pages/settings_page.dart';
 import 'pages/splash_screen.dart';
@@ -141,6 +142,7 @@ class MyApp extends StatelessWidget {
     '/dashboard': (context) => const Dashboard(),
     '/chat': (context) => const ChatScreen(),
     '/chat_page': (context) => const ChatPage(),
+    '/chat_history': (context) => const ChatHistoryPage(),
     '/settings': (context) => const SettingsPage(),
   };
 

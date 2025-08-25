@@ -11,6 +11,7 @@ import '../services/terms_acceptance_service.dart';
 import '../utils/settings_util.dart';
 import '../utils/gender_util.dart';
 import '../utils/error_handler.dart';
+import 'chat_history_page.dart';
 // TESTING MODE: Subscription, message counter, and paywall imports temporarily disabled
 // import '../services/subscription_service.dart';
 // import '../services/message_counter_service.dart';
@@ -830,40 +831,111 @@ class _ChatScreenState extends State<ChatScreen> {
                         ],
                       ),
                     ),
-                    // Action icons with better spacing
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.add_box_outlined, color: Color(0xFF8B5A3C), size: 22),
-                          onPressed: _startNewChat,
-                          tooltip: 'New chat',
-                          padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                    // Dropdown menu with all actions
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, color: Color(0xFF8B5A3C), size: 24),
+                      tooltip: 'More options',
+                      onSelected: (String value) {
+                        switch (value) {
+                          case 'new_chat':
+                            _startNewChat();
+                            break;
+                          case 'save':
+                            _saveCurrentChatManually();
+                            break;
+                          case 'history':
+                            _navigateToChatHistory();
+                            break;
+                          case 'refresh':
+                            setState(() {
+                              // Refresh the UI
+                            });
+                            break;
+                          case 'delete':
+                            _showClearChatDialog();
+                            break;
+                        }
+                      },
+                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                        PopupMenuItem<String>(
+                          value: 'new_chat',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.add_box_outlined, color: Color(0xFF8B5A3C), size: 20),
+                              const SizedBox(width: 12),
+                              Text(
+                                'New Chat',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF8B5A3C),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(width: 4),
-                        IconButton(
-                          icon: const Icon(Icons.bookmark_border, color: Color(0xFF8B5A3C), size: 22),
-                          onPressed: () {}, // Save functionality
-                          tooltip: 'Save',
-                          padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        PopupMenuItem<String>(
+                          value: 'save',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.bookmark_border, color: Color(0xFF8B5A3C), size: 20),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Save Chat',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF8B5A3C),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(width: 4),
-                        IconButton(
-                          icon: const Icon(Icons.refresh, color: Color(0xFF8B5A3C), size: 22),
-                          onPressed: () {}, // Refresh functionality
-                          tooltip: 'Refresh',
-                          padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        PopupMenuItem<String>(
+                          value: 'history',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.history, color: Color(0xFF8B5A3C), size: 20),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Chat History',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF8B5A3C),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(width: 4),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Color(0xFF8B5A3C), size: 22),
-                          onPressed: () {}, // Delete functionality
-                          tooltip: 'Delete',
-                          padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        PopupMenuItem<String>(
+                          value: 'refresh',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.refresh, color: Color(0xFF8B5A3C), size: 20),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Refresh',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF8B5A3C),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.delete_outline, color: Color(0xFF8B5A3C), size: 20),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Delete Chat',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF8B5A3C),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -1172,15 +1244,9 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  /// Navigate to chat history page - Feature removed for minimal app structure
+  /// Navigate to chat history page
   void _navigateToChatHistory() {
-    // Chat history page removed - show simple message instead
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Chat history feature is not available in this version'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    Navigator.pushNamed(context, '/chat_history');
   }
 
   /// Save chat history immediately after each message if enabled
