@@ -65,6 +65,7 @@ dependencies:
 
   # Encryption for secure chat storage
   crypto: ^3.0.5
+  encrypt: ^5.0.3
 
   # RevenueCat for subscription management
   purchases_flutter: ^8.10.4
@@ -86,7 +87,7 @@ dev_dependencies:
 
   # Code quality and testing tools
   mockito: ^5.4.4
-  test_coverage: ^0.2.0
+  coverage: ^1.6.0
   integration_test:
     sdk: flutter
 
