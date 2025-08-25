@@ -692,36 +692,24 @@ class _ChatScreenState extends State<ChatScreen> {
   /// Build connection status indicator
   Widget _buildConnectionStatus() {
     if (_isCheckingConnection) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFCF8F1).withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  Color(0xFFFCF8F1),
-                ),
-              ),
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.wifi,
+            size: 12,
+            color: Color(0xFF4CAF50),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            'Checking...',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: const Color(0xFF4CAF50),
+              fontWeight: FontWeight.w500,
             ),
-            const SizedBox(width: 6),
-            Text(
-              'Checking connection...',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: const Color(0xFFFCF8F1),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       );
     }
 
@@ -729,31 +717,24 @@ class _ChatScreenState extends State<ChatScreen> {
     final statusIcon = _isConnected ? Icons.wifi : Icons.wifi_off;
     final statusText = _isConnected ? 'Connected' : 'Offline';
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: statusColor.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            statusIcon,
-            size: 14,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          statusIcon,
+          size: 12,
+          color: statusColor,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          statusText,
+          style: GoogleFonts.inter(
+            fontSize: 12,
             color: statusColor,
+            fontWeight: FontWeight.w500,
           ),
-          const SizedBox(width: 6),
-          Text(
-            statusText,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: statusColor,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -799,21 +780,18 @@ class _ChatScreenState extends State<ChatScreen> {
       body: SafeArea(
         child: Column(
             children: [
-              // ✨ HEADER: Chat title and model info
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF8B5A3C), // Earthy brown header
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(24),
-                  ),
-                ),
+              // ✨ HEADER: Simple header like the image
+              Padding(
+                padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Color(0xFFFCF8F1)),
+                      icon: const Icon(Icons.arrow_back, color: Color(0xFF8B5A3C)),
                       onPressed: () => Navigator.pop(context),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                     ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -821,75 +799,61 @@ class _ChatScreenState extends State<ChatScreen> {
                           Text(
                             'Your safe space',
                             style: GoogleFonts.lexend(
-                              fontSize: 22,
+                              fontSize: 20,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFFFCF8F1),
+                              color: const Color(0xFF8B5A3C),
                             ),
                           ),
-                          const SizedBox(height: 8),
                           FutureBuilder<String>(
                             future: GenderUtil.getCompanionName(),
                             builder: (context, snapshot) {
-                              final companionName = snapshot.data ?? 'Akhi';
+                              final companionName = snapshot.data ?? 'Bro';
                               return Text(
                                 'Model: $companionName',
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: const Color(0xFFFCF8F1).withValues(alpha: 0.9),
+                                  color: const Color(0xFF8B5A3C).withValues(alpha: 0.8),
                                 ),
                               );
                             },
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 4),
                           // Connection status indicator
                           _buildConnectionStatus(),
+                          Text(
+                            'New conversation',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: const Color(0xFF8B5A3C).withValues(alpha: 0.6),
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    // Primary actions - always visible
+                    // Action icons like in the image
                     IconButton(
-                      icon: const Icon(Icons.add_comment_outlined, color: Color(0xFFFCF8F1)),
+                      icon: const Icon(Icons.add_box_outlined, color: Color(0xFF8B5A3C)),
                       onPressed: _startNewChat,
                       tooltip: 'New chat',
                     ),
                     IconButton(
-                      icon: const Icon(Icons.history, color: Color(0xFFFCF8F1)),
-                      onPressed: _navigateToChatHistory,
-                      tooltip: 'Chat history',
+                      icon: const Icon(Icons.bookmark_border, color: Color(0xFF8B5A3C)),
+                      onPressed: () {}, // Save functionality
+                      tooltip: 'Save',
                     ),
-                    // Secondary actions - overflow menu
-                    PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert, color: Color(0xFFFCF8F1)),
-                      tooltip: 'More options',
-                      onSelected: (String value) {
-                        switch (value) {
-                          case 'save':
-                            _saveCurrentChatManually();
-                            break;
-                          case 'clear':
-                            _showClearChatDialog();
-                            break;
-                        }
-                      },
-                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                        PopupMenuItem<String>(
-                          value: 'save',
-                          child: Row(
-                            children: [
-                              const Icon(Icons.save_outlined, color: Color(0xFF7B4F2F), size: 20),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Save Chat',
-                                style: GoogleFonts.inter(
-                                  color: const Color(0xFF7B4F2F),
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem<String>(
+                    IconButton(
+                      icon: const Icon(Icons.refresh, color: Color(0xFF8B5A3C)),
+                      onPressed: () {}, // Refresh functionality
+                      tooltip: 'Refresh',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Color(0xFF8B5A3C)),
+                      onPressed: () {}, // Delete functionality
+                      tooltip: 'Delete',
+                    ),
+                  ],
+                ),
+              ),
                           value: 'clear',
                           child: Row(
                             children: [
@@ -915,37 +879,40 @@ class _ChatScreenState extends State<ChatScreen> {
               Expanded(
                 child: _messages.isEmpty
                     ? Center(
-                        child: FutureBuilder<String?>(
-                          future: GenderUtil.getDisplayName(),
-                          builder: (context, snapshot) {
-                            final displayName = snapshot.data ?? 'friend';
-                            return Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.chat_bubble_outline,
-                                  size: 64,
-                                  color: const Color(0xFF7B4F2F).withValues(alpha: 0.7),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Hey $displayName! 👋',
-                                  style: GoogleFonts.lexend(
-                                    fontSize: 18,
-                                    color: const Color(0xFF7B4F2F),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'What\'s on your mind today?',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: const Color(0xFF7B4F2F).withValues(alpha: 0.7),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Brown chat bubble icon like in the image
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF8B5A3C),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Icon(
+                                Icons.chat_bubble_outline,
+                                size: 32,
+                                color: Color(0xFFFCF8F1),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            Text(
+                              'Hey friend! 👋',
+                              style: GoogleFonts.lexend(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF8B5A3C),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'What\'s on your mind today?',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                color: const Color(0xFF8B5A3C).withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ],
                         ),
                       )
                     : ListView.builder(
